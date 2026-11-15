@@ -57,6 +57,13 @@ StarRailRes `index_min/kr` 및 `index_new/kr`에서 존재를 확인한 4종만 
 - 비교는 **다운로드 성공 후** 수행하며, 다운로드 실패 시 이전 데이터 및 이력은 그대로 남깁니다.
 - 기존 0.1.4 동기화에 대한 과거 변경 이력은 소급 생성하지 않습니다.
 
+### 0.1.7 선택형 적·보스 데이터
+
+- [DimbreathBot/TurnBasedGameData 정식 릴리스 4.7.0 커밋](https://github.com/DimbreathBot/TurnBasedGameData/commit/dad9155eb00fdeda31fb8456507c53590d49071f)에서 `MonsterTemplateConfig.json` 665개, `TextMapMainKR.json`, `TextMapKR_0.json`, `TextMapKR_1.json` 경로를 확인했습니다.
+- 적 원본의 `MonsterTemplateID`·`MonsterName.Hash`·`Rank`·기초 HP/공격/방어/속도 및 일부 저항의 **실제 원본 필드만** 사용합니다. 이름 해시 64비트 정밀도를 문자열로 보존하고, 한국어 이름 연결에 실패하면 `name:null`을 기록합니다.
+- **기존 StarRailRes 20종 동기화에는 추가하지 않습니다.** 별도 사용자가 선택한 다운로드로 준비한 변환 인덱스를 `.local-data/game/enemies/index.json`에 저장합니다.
+- 적의 약점, 원소별 저항 및 스킬 상세, 전투 레벨/콘텐츠 보정값은 아직 확보·검증하지 않아 출력하지 않습니다. 다운로드 완료 후 실제 이름 연결률 확인이 필요합니다.
+
 ## 개인 계정 — 후속 단계
 
 - 공개 UID/전시 캐릭터 데이터: 노출한 캐릭터만 조회 가능하며 전체 인벤토리 대체 불가.
