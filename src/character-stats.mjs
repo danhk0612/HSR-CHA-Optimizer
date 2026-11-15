@@ -115,7 +115,7 @@ export async function importMihomoParsed(root, scanner, input, importedAt = new 
     const attributes = propertyArray(char.attributes);
     const additions = propertyArray(char.additions);
     const properties = propertyArray(char.properties);
-    if (!attributes.length || !additions.length) throw new Error('공개 전시의 능력치 정보가 비어 있습니다.');
+    if (!attributes.length) throw new Error('공개 전시의 기초 능력치 정보가 비어 있습니다.');
     parsed.set(key, {
       source: 'mihomo-parsed-local-file',
       importedAt,
