@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildAiReport, toAiMarkdown } from '../src/ai-report.mjs';
+import { buildAiReport, toAiMarkdown, resolveCharacterName } from '../src/ai-report.mjs';
 
 const scanner = {
   source: 'reliquary_archiver', build: '0.20.0', version: 4,
@@ -82,4 +82,33 @@ test('unowned characters and invalid candidate modes are rejected', () => {
   assert.throws(() => buildAiReport(scanner, tables, manifest, {}), /캐릭터 ID/);
   assert.throws(() => buildAiReport(scanner, tables, manifest, { characterIds: ['9999'] }), /보유 캐릭터 목록에 없는/);
   assert.throws(() => buildAiReport(scanner, tables, manifest, { ...base, candidateMode: 'unsafe' }), /후보 범위/);
+});
+
+test('Trailblazer nickname placeholder resolves to Korean path and element without guessing nickname', () => {
+  const t = {
+    characters: {
+      8002: { id: '8002', name: '{NICKNAME}', path: 'Warrior', element: 'Physical' },
+      8010: { id: '8010', name: '{NICKNAME}', path: 'Elation', element: 'Thunder' },
+    },
+    paths: { Warrior: { name: '파멸' }, Elation: { name: '환락' } },
+    elements: { Physical: { name: '물리' }, Thunder: { name: '번개' } },
+  };
+  assert.equal(resolveCharacterName({ id: '8002' }, t), '개척자 (파멸 · 물리)');
+  assert.equal(resolveCharacterName({ id: '8010' }, t), '개척자 (환락 · 번개)');
+  assert.equal(resolveCharacterName({ id: '8002' }, { characters: t.characters }), '개척자 (8002)');
+  assert.equal(resolveCharacterName({ id: '1308', name: 'Acheron' }, tables), '아케론');
+});
+
+test('major trace descriptions distinguish unlocked from locked nodes', () => {
+  const sampleTables = {
+    ...tables,
+    character_skill_trees: {
+      1308101: { name: '행적 A', desc: '설명 A', params: [[1]] },
+      1308102: { name: '행적 B', desc: '설명 B', params: [[2]] },
+      1308103: { name: '행적 C', desc: '설명 C', params: [[3]] },
+    },
+  };
+  const report = buildAiReport(scanner, sampleTables, manifest, base);
+  const states = report.characters[0].majorTraceDefinitions.map(x => x.unlocked);
+  assert.deepEqual(states, [true, false, false]);
 });
