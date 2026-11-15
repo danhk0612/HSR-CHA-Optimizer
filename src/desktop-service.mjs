@@ -6,6 +6,7 @@ import { buildCandidateFilterOptions } from './relic-filters.mjs';
 import { exportPublicData } from './public-data-files.mjs';
 import { readLatestGameChangeReport } from './game-changes.mjs';
 import { compareCharacterSheet } from './stat-comparison.mjs';
+import { WARP_POOLS, readWarpState, saveManualWarpPool, clearManualWarpPool } from './warp-state.mjs';
 import { readCharacterStats, getCharacterStatsSummary, MANUAL_STAT_FIELDS,
   saveManualCharacterStats, clearManualCharacterStats, importMihomoParsed } from './character-stats.mjs';
 
@@ -27,6 +28,7 @@ export async function getDesktopState(root) {
     characterStats: {},
     characterStatComparisons: {},
     characterStatsSummary: { manual: 0, showcase: 0 },
+    warpPools: WARP_POOLS, warpState: { pools: {} },
   };
   if (gameReady) {
     const current = JSON.parse(await readFile(join(base, 'game', 'current.json'), 'utf8'));
@@ -36,6 +38,7 @@ export async function getDesktopState(root) {
   if (!gameReady || !accountReady) return empty;
   const data = await loadAccountData(root);
   const sheet = await readCharacterStats(root, data.scanner);
+  const warpState = await readWarpState(root, data.scanner);
   return {
     ...empty,
     ready: true,
@@ -57,12 +60,14 @@ export async function getDesktopState(root) {
         .map(item => [String(item.id), compareCharacterSheet(sheet.characters[String(item.id)], item)])
         .filter(([, comparison]) => comparison !== null)),
     characterStatsSummary: getCharacterStatsSummary(sheet),
+    warpState,
   };
 }
 
 export async function exportDesktopReport(root, request) {
   const data = await loadAccountData(root);
   const sheet = await readCharacterStats(root, data.scanner);
+  const warp = await readWarpState(root, data.scanner);
   const report = buildAiReport(data.scanner, data.tables, data.manifest, {
     characterIds: request.characterIds,
     candidateMode: request.candidateMode ?? 'none',
@@ -72,6 +77,7 @@ export async function exportDesktopReport(root, request) {
     candidateFilters: request.candidateFilters,
     includeResources: request.includeResources === true,
     characterStats: sheet,
+    manualWarpState: warp,
     importedAt: data.imported.importedAt,
   });
   return request.format === 'markdown'
@@ -97,4 +103,14 @@ export async function importSavedShowcase(root, inputPath) {
 
 export async function exportPublicInfo(root, request) {
   return exportPublicData(root, request);
+}
+
+export async function saveWarpPool(root, name, input) {
+  const { scanner } = await loadAccountData(root);
+  return saveManualWarpPool(root, scanner, name, input);
+}
+
+export async function clearWarpPool(root, name) {
+  const { scanner } = await loadAccountData(root);
+  return clearManualWarpPool(root, scanner, name);
 }
