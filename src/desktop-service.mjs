@@ -38,7 +38,7 @@ export async function getDesktopState(root) {
   }
   if (gameReady) empty.gameChanges = await readLatestGameChangeReport(root);
   const enemyIndex = gameReady ? await readEnemyIndex(root) : null;
-  if (enemyIndex) empty.enemyData = {
+  if (enemyIndex && enemyIndex.sourceGameVersion === empty.version) empty.enemyData = {
     prepared: true, total: enemyIndex.total, nameResolved: enemyIndex.nameResolved,
     nameUnresolved: enemyIndex.nameUnresolved, sourceGameVersion: enemyIndex.sourceGameVersion,
   };
