@@ -1,9 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { PUBLIC_TABLES, searchPublicData, publicDataMarkdown } from './public-resources.mjs';
+import { exportEnemyData } from './enemy-files.mjs';
 
 export async function exportPublicData(root, request) {
   const type = request.type;
+  if (type === 'enemies') return exportEnemyData(root, request);
   const entry = PUBLIC_TABLES[type];
   if (!entry) throw new Error('지원하지 않는 공개 자료 종류입니다.');
   const base = resolve(root, '.local-data', 'game');
