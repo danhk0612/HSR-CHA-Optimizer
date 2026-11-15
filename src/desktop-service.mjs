@@ -1,4 +1,4 @@
-import { access } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { loadAccountData } from './account-files.mjs';
 import { buildAiReport, toAiMarkdown, resolveCharacterName } from './ai-report.mjs';
@@ -16,6 +16,10 @@ export async function getDesktopState(root) {
     version: null, importedAt: null,
     characters: [], lightCones: 0, relics: 0,
   };
+  if (gameReady) {
+    const current = JSON.parse(await readFile(join(base, 'game', 'current.json'), 'utf8'));
+    empty.version = current.version ?? null;
+  }
   if (!gameReady || !accountReady) return empty;
   const data = await loadAccountData(root);
   return {
