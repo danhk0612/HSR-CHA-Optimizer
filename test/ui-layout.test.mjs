@@ -6,6 +6,9 @@ import { join } from 'node:path';
 const html = await readFile(join(process.cwd(), 'public', 'index.html'), 'utf8');
 const desktop = await readFile(join(process.cwd(), 'src', 'desktop.cjs'), 'utf8');
 const preload = await readFile(join(process.cwd(), 'src', 'desktop-preload.cjs'), 'utf8');
+const realSmoke = await readFile(join(process.cwd(), 'src', 'real-account-smoke.cjs'), 'utf8');
+const pkg = JSON.parse(await readFile(join(process.cwd(), 'package.json'), 'utf8'));
+
 
 test('the five data kinds are independent checkbox-enabled tabs, not one shared dropdown or search', () => {
   for (const name of ['characters', 'lightCones', 'relics', 'ornaments', 'materials']) {
@@ -69,4 +72,23 @@ test('packaged Electron smoke verifies actual tab interactions, not only presenc
   assert.match(desktop, /ipcMain\.handle\('hsr:inventory-catalog'/);
   assert.match(desktop, /const savedFile = join\(smokeRoot, 'selected-items.json'\)/);
   assert.match(desktop, /savedRequest\.keys\.length !== 60/);
+});
+
+test('real account smoke keeps account read-only and verifies three user-facing formats', () => {
+  assert.doesNotThrow(() => new Function(realSmoke));
+  assert.match(desktop, /realAccountSmoke \? process\.cwd\(\)/);
+  assert.match(desktop, /filePath: join\(smokeRoot, 'real-selected\.' \+ extension\)/);
+  assert.match(desktop, /require\('\.\/real-account-smoke\.cjs'\)/);
+  for (const category of ['characters','lightCones','relics','ornaments','materials']) {
+    assert.ok(realSmoke.includes(category), 'missing real account category: ' + category);
+  }
+  for (const extension of ['json','md','html']) {
+    assert.ok(realSmoke.includes("'real-selected." + extension + "'"),
+      'real account format not verified: ' + extension);
+  }
+  assert.match(realSmoke, /new DOMParser\(\)/);
+  assert.match(realSmoke, /htmlCheck\.rows !== 10/);
+  assert.match(realSmoke, /temporaryOutputOnly: true/);
+  assert.match(pkg.scripts['verify:local-win'], /npm run smoke:real-win/);
+  assert.doesNotMatch(pkg.scripts['verify:win'], /smoke:real-win/);
 });
