@@ -119,6 +119,23 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 </div>
 <p>퍼센트 능력치는 게임 화면 그대로 입력합니다(예: 치명타 확률 65.3% → 65.3). 수동 값은 입력한 항목만 기록합니다. 미입력 능력치는 0으로 취급하지 않습니다. JSON 가져오기는 이미 내려받은 MiHoMo Parsed 형식만 허용하며 UID를 외부에 요청하지 않습니다.</p>
 </section>
+<section class="panel stats-editor" id="warpPanel" hidden>
+<h2>워프 천장 수동 기록</h2>
+<p>게임 화면에서 직접 확인한 스택만 입력하세요. 이 기능은 워프 이력을 조회하거나 보장 상태를 계산하지 않습니다. 종류별 스택은 서로 섞지 않습니다.</p>
+<div class="row">
+<div><label for="warpType">워프 종류</label><select id="warpType"></select></div>
+<div><label for="warpPity">현재 5성 이후 스택</label><input id="warpPity" type="number" min="0" step="1" placeholder="미입력"></div>
+<div><label for="warpGuarantee">다음 5성 보장 상태</label><select id="warpGuarantee">
+<option value="unknown">미확인</option><option value="yes">픽업 확정</option>
+<option value="no">픽업 확정 아님</option></select></div>
+</div>
+<p id="warpStatus">저장된 워프 기록 없음</p>
+<div class="actions">
+<button id="warpSave" type="button">워프 기록 저장</button>
+<button id="warpClear" class="secondary" type="button">선택 종류 기록 삭제</button>
+</div>
+<p>사용자 수동 기록은 자동으로 갱신되지 않습니다. 상시·초보자 워프에는 픽업 확정 여부를 적용하지 않습니다. 계정별 별도 파일로 저장되며 AI 출력에서는 재료·티켓 포함 옵션을 선택한 경우에만 포함합니다.</p>
+</section>
 <section class="panel public-editor" id="publicEditor">
 <h2>공개 게임 자료 검색</h2>
 <p>StarRailRes 한국어 데이터에 포함된 시뮬레이션 우주 자료를 검색합니다. 캐릭터 육성/계정 정보는 전송하지 않습니다. 이전 16종 데이터만 있다면 게임 데이터 동기화가 필요합니다.</p>
@@ -149,6 +166,36 @@ const selected = new Set();
 let all = [], output = '', outputFormat = 'json';
 let publicOutput = '', publicOutputFormat = 'json';
 let sheetRecords = {}, sheetFields = {}, sheetComparisons = {};
+let warpPools = {}, warpRecords = {};
+el('warpPanel').hidden = !desktop;
+
+function renderWarpPanel() {
+  if (!desktop) return;
+  const type = el('warpType').value;
+  const record = warpRecords[type];
+  const def = warpPools[type];
+  el('warpPity').max = def?.maxPity ?? 90;
+  el('warpPity').value = record?.pity ?? '';
+  el('warpGuarantee').disabled = !def?.guarantee;
+  el('warpGuarantee').value = def?.guarantee ? (record?.guarantee ?? 'unknown') : 'unknown';
+  el('warpStatus').textContent = record
+    ? '수동 입력 기록: ' + record.pity + '스택 · ' + record.recordedAt
+    : '선택한 종류의 저장된 기록이 없습니다.';
+}
+function renderWarpOptions(preserve = true) {
+  if (!desktop) return;
+  const input = el('warpType');
+  const current = preserve ? input.value : '';
+  input.replaceChildren();
+  for (const [value, detail] of Object.entries(warpPools)) {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = detail.name;
+    input.append(option);
+  }
+  if (current && warpPools[current]) input.value = current;
+  renderWarpPanel();
+}
 el('sheetEditor').hidden = !desktop;
 
 function renderSheetComparison(id) {
@@ -377,6 +424,8 @@ async function refreshState() {
   sheetRecords = state.characterStats ?? {};
   sheetFields = state.characterStatFields ?? {};
   sheetComparisons = state.characterStatComparisons ?? {};
+  warpPools = state.warpPools ?? {};
+  warpRecords = state.warpState?.pools ?? {};
   selected.clear();
   invalidateOutput();
   const gameText = state.version ?? '미설치';
@@ -397,6 +446,7 @@ async function refreshState() {
   }
   render();
   renderSheetEditor(true);
+  renderWarpOptions(true);
 }
 await refreshState();
 el('filter').addEventListener('input', render);
@@ -409,6 +459,31 @@ for (const id of ['minRarity','candidateLimit','resources','format']) {
 }
 
 if (desktop) {
+  el('warpType').addEventListener('change', renderWarpPanel);
+  el('warpSave').addEventListener('click', async () => {
+    const name = el('warpType').value;
+    const raw = el('warpPity').value.trim();
+    if (!raw) { el('warpStatus').textContent = '스택을 입력하세요. 미확인은 기록하지 않습니다.'; return; }
+    const input = { pity: Number(raw), guarantee: el('warpGuarantee').value };
+    el('warpSave').disabled = true;
+    try {
+      await desktop.saveWarpPool(name, input);
+      await refreshState();
+      el('warpStatus').textContent = '워프 수동 기록 저장 완료';
+    } catch (error) {
+      el('warpStatus').textContent = '워프 기록 저장 실패: ' + error.message;
+    } finally { el('warpSave').disabled = false; }
+  });
+  el('warpClear').addEventListener('click', async () => {
+    el('warpClear').disabled = true;
+    try {
+      await desktop.clearWarpPool(el('warpType').value);
+      await refreshState();
+      el('warpStatus').textContent = '선택한 워프 기록 삭제 완료';
+    } catch (error) {
+      el('warpStatus').textContent = '워프 기록 삭제 실패: ' + error.message;
+    } finally { el('warpClear').disabled = false; }
+  });
   el('manualStatCharacter').addEventListener('change', renderSheetInputs);
   el('manualSheetSave').addEventListener('click', async () => {
     const id = el('manualStatCharacter').value;
