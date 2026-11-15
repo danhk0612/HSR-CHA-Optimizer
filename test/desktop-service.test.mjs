@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase } from '../src/desktop-service.mjs';
+import { getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, saveWarpPool, clearWarpPool } from '../src/desktop-service.mjs';
 import { importAccountArchive } from '../src/account-import.mjs';
 
 const files = [
@@ -152,6 +152,23 @@ test('desktop imports actual v4-compatible file, labels Trailblazer and excludes
     assert.equal(enhanced.limitations.characterSheetCoverage.manuallyObserved, 1);
     assert.ok(!enhancedOutput.includes('DO NOT EXPORT'));
     assert.ok(!enhancedOutput.includes('123456789'));
+
+    await saveWarpPool(root, 'character', { pity: 37, guarantee: 'unknown' });
+    const current = await getDesktopState(root);
+    assert.equal(current.warpState.pools.character.pity, 37);
+    const warpOutput = JSON.parse(await exportDesktopReport(root, {
+      characterIds: ['1308'], format: 'json', includeResources: true,
+    }));
+    assert.equal(warpOutput.resources.manualWarpPity.character.pity, 37);
+    assert.equal(warpOutput.limitations.warpPityCollected, false);
+    assert.equal(warpOutput.limitations.warpPityManuallyRecorded, true);
+    const withoutResources = JSON.parse(await exportDesktopReport(root, {
+      characterIds: ['1308'], format: 'json', includeResources: false,
+    }));
+    assert.equal(withoutResources.resources, undefined);
+    await clearWarpPool(root, 'character');
+    assert.deepEqual((await getDesktopState(root)).warpState.pools, {});
+
     await clearManualSheet(root, '1308');
     const afterClear = JSON.parse(await exportDesktopReport(root, {
       characterIds: ['1308'], format: 'json',
