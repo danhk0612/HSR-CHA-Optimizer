@@ -137,12 +137,17 @@ test('desktop imports actual v4-compatible file, labels Trailblazer and excludes
     const updated = await getDesktopState(root);
     assert.equal(updated.characterStatsSummary.manual, 1);
     assert.equal(updated.characterStatsSummary.showcase, 1);
+    assert.equal(updated.characterStatComparisons['1308'].fieldsCompared, 1);
+    assert.equal(updated.characterStatComparisons['1308'].rows.find(x => x.field === 'hp').difference, 0);
+    assert.equal(updated.characterStatComparisons['1308'].rows.find(x => x.field === 'spd').difference, null);
     const enhancedOutput = await exportDesktopReport(root, {
       characterIds: ['1308'], format: 'json',
     });
     const enhanced = JSON.parse(enhancedOutput);
     assert.equal(enhanced.characters[0].characterSheet.manualObserved.values.spd, 143.5);
     assert.equal(enhanced.characters[0].characterSheet.publicShowcaseCalculated.attributes[0].value, 2500);
+    assert.equal(enhanced.characters[0].characterSheet.comparison.fieldsCompared, 1);
+    assert.equal(enhanced.characters[0].characterSheet.comparison.rows.find(x => x.field === 'hp').difference, 0);
     assert.equal(enhanced.limitations.characterSheetStatsCollected, true);
     assert.equal(enhanced.limitations.characterSheetCoverage.manuallyObserved, 1);
     assert.ok(!enhancedOutput.includes('DO NOT EXPORT'));
@@ -152,6 +157,7 @@ test('desktop imports actual v4-compatible file, labels Trailblazer and excludes
       characterIds: ['1308'], format: 'json',
     }));
     assert.equal(afterClear.characters[0].characterSheet.manualObserved, undefined);
+    assert.equal(afterClear.characters[0].characterSheet.comparison, undefined);
     assert.ok(afterClear.characters[0].characterSheet.publicShowcaseCalculated);
     assert.equal(afterClear.limitations.characterSheetStatsCollected, false);
     const saved = JSON.parse(await readFile(join(root, '.local-data', 'account', 'scanner.json'), 'utf8'));
