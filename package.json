@@ -13,6 +13,9 @@
     "import:scanner": "node src/import-scanner.mjs",
     "export:account": "node src/export-account.mjs",
     "export:character": "node src/export-character.mjs",
-    "test": "node --test"
+    "export:ai": "node src/export-ai.mjs",
+    "gui": "node src/gui.mjs",
+    "test": "node --test",
+    "verify": "node --test && node src/verify.mjs"
   }
 }
