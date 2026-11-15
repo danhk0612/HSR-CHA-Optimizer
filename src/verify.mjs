@@ -22,6 +22,11 @@ assert.ok(!encoded.includes(String(scanner.metadata?.uid ?? 'never-match')), '�
 assert.equal(report.characters.length, 1);
 assert.equal(report.characters[0].gameDataAvailable, true);
 assert.ok(report.characters[0].name);
+const actualRelics = report.characters[0].relics;
+assert.ok(actualRelics.length > 0, '검증 대상 캐릭터에 장착된 유물이 없습니다.');
+const derivedRelics = actualRelics.filter(relic => relic.mainstatDetail !== null);
+assert.ok(derivedRelics.length > 0, '주옵션 원본 데이터 연결에 실패했습니다.');
+assert.ok(derivedRelics.every(relic => Number.isFinite(relic.mainstatDetail.value)), '유물 주옵션 숫자가 유효하지 않습니다.');
 assert.ok(Array.isArray(report.resources.materials));
 assert.ok(toAiMarkdown(report).includes('AI 분석용 계정 자료'));
 const matchingCharacters = scanner.characters.filter(item => tables.characters[String(item.id)]).length;
@@ -32,4 +37,4 @@ assert.equal(matchingCones, scanner.light_cones.length, '일부 광추의 게임
 assert.equal(matchingRelics, scanner.relics.length, '일부 유물의 게임 원본 세트 매칭 실패');
 const materialMatches = scanner.materials?.filter(item => tables.items[String(item.id)]).length ?? 0;
 console.log(`통합 검증 통과: 게임 ${manifest.version}, 캐릭터 ${matchingCharacters}/${scanner.characters.length}, 광추 ${matchingCones}/${scanner.light_cones.length}, 유물 ${matchingRelics}/${scanner.relics.length}, 한국어 재료 ${materialMatches}/${scanner.materials?.length ?? 0}`);
-console.log(`AI용 실제 데이터 출력: 캐릭터 1명, 미장착 후보 ${report.candidates?.included ?? 0}개, UID 제외 확인`);
+console.log(`AI용 실제 데이터 출력: 캐릭터 1명, 장착 유물 주옵션 ${derivedRelics.length}/${actualRelics.length}개 값 연결, 미장착 후보 ${report.candidates?.included ?? 0}개, UID 제외 확인`);
