@@ -4,6 +4,8 @@
 
 > 이 프로그램은 게임 데이터를 AI에 전달하기 좋게 정리하지만, AI API 호출·자동 판단·자동 육성 추천은 수행하지 않습니다. AI 분석은 사용자가 내보낸 자료를 직접 전달하여 진행합니다.
 
+**Windows 시험 배포 v0.1.10:** [GitHub Release 및 Portable EXE 다운로드](https://github.com/danhk0612/HSR-CHA-Optimizer/releases/tag/v0.1.10) · Windows x64 · 미서명 · 개인 계정/게임 원본 데이터 미동봉. 2026-11-15 GitHub Actions에서 97/97 테스트, Portable 빌드, Electron GUI 검사 통과. 변경 사항은 [릴리스 노트](docs/RELEASE_NOTES_0.1.10.md)를 참고하세요.
+
 ## 범위
 
 - **게임 데이터:** 캐릭터, 성혼, 행적, 스킬, 광추, 유물, 재료 등 공개 데이터. 추후 적·전투 콘텐츠 등으로 확장합니다.
