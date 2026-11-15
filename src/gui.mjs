@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadAccountData } from './account-files.mjs';
 import { buildAiReport, toAiMarkdown, resolveCharacterName } from './ai-report.mjs';
+import { buildCandidateFilterOptions } from './relic-filters.mjs';
 
 // Local-only preview UI. No game process, remote server, or AI API access.
 const data = await loadAccountData();
@@ -24,6 +25,7 @@ const server = createServer(async (req, res) => {
       characters: characterList, lightCones: data.scanner.light_cones?.length ?? 0,
       relics: data.scanner.relics?.length ?? 0,
       unequippedRelics: data.scanner.relics?.filter(item => !item.location).length ?? null,
+      candidateFilterOptions: buildCandidateFilterOptions(data.scanner, data.tables),
     })); return;
   }
   if (req.method === 'POST' && req.url === '/api/export') {
@@ -42,6 +44,7 @@ const server = createServer(async (req, res) => {
         candidateSetIds: body.candidateSetIds ?? [],
         minRarity: body.minRarity ?? 0,
         candidateLimit: body.candidateLimit,
+        candidateFilters: body.candidateFilters,
         includeResources: body.includeResources === true,
         importedAt: data.imported.importedAt,
       };
