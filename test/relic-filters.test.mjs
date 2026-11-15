@@ -50,7 +50,7 @@ test('no filters preserve input order and duplicate selections are normalized', 
 
 test('filter options represent actual unequipped inventory with Korean names and counts', () => {
   const choices = buildCandidateFilterOptions({ relics }, tables);
-  assert.deepEqual(choices.sets.map(x => [x.value, x.count]), [['314', 2], ['110', 2]]);
+  assert.deepEqual(Object.fromEntries(choices.sets.map(x => [x.value, x.count])), { '110': 2, '314': 2 });
   assert.equal(choices.slots.length, 4);
   assert.equal(choices.slots.find(x => x.value === 'Feet').label, '신발');
   assert.equal(choices.mainstats.find(x => x.value === 'CRIT Rate').label, '치명타 확률');
