@@ -101,6 +101,9 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
             toolbar: document.getElementById('desktopToolbar').hidden === false,
             importButton: !!document.getElementById('importArchive'),
             exportButton: !!document.getElementById('generate'),
+            candidateFilterControls: ['candidateFilterArea', 'candidateSetChoices',
+              'candidateSlotChoices', 'candidateMainChoices', 'candidateSubChoices']
+              .every(id => !!document.getElementById(id)),
           };
         })()`);
         if (!Object.values(result).every(Boolean)) {
