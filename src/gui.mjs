@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { loadAccountData } from './account-files.mjs';
 import { buildAiReport, toAiMarkdown, resolveCharacterName } from './ai-report.mjs';
 import { buildCandidateFilterOptions } from './relic-filters.mjs';
+import { exportPublicData } from './public-data-files.mjs';
 
 // Local-only preview UI. No game process, remote server, or AI API access.
 const data = await loadAccountData();
@@ -52,6 +53,25 @@ const server = createServer(async (req, res) => {
       const output = body.format === 'markdown' ? toAiMarkdown(report) : JSON.stringify(report, null, 2);
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(output);
+    } catch (error) {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end(error.message);
+    }
+    return;
+  }
+  if (req.method === 'POST' && req.url === '/api/public') {
+    try {
+      const chunks = [];
+      let size = 0;
+      for await (const chunk of req) {
+        size += chunk.length;
+        if (size > 32768) throw new Error('검색 요청이 너무 큽니다.');
+        chunks.push(chunk);
+      }
+      const options = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      const result = await exportPublicData(process.cwd(), options);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(JSON.stringify(result));
     } catch (error) {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end(error.message);
