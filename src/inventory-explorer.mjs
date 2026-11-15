@@ -204,8 +204,10 @@ export function selectInventoryForExport(report, request) {
 const escapeHtml = v => value(v).replace(/[&<>"']/g,
   ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 const printable = v => v == null ? '-' : String(v);
-const statText = item => (item.raw?.substats ?? []).map(s =>
-  s.key + ' ' + (s.value ?? '?') + (s.count == null ? '' : ' (' + s.count + '회)')).join(', ');
+const statText = item => (item.substats?.length ? item.substats : (item.raw?.substats ?? []))
+  .map(s => (s.name ?? s.key) + ' ' +
+    (s.displayValue ?? s.value ?? '?') + (s.unit === '%' ? '%' : '') +
+    (s.count == null ? '' : ' (' + s.count + '회)')).join(', ');
 
 function humanRows(report) {
   const list = [];
@@ -228,7 +230,10 @@ function humanRows(report) {
   for (const r of report.relics) list.push({
     group: ORNAMENT_SLOTS.has(r.raw.slot) ? 'ornaments' : 'relics',
     name: r.setName ?? r.raw.name ?? r.setId, rarity: r.raw.rarity, level: r.raw.level,
-    detail: '부위 ' + r.raw.slot + ' / 주옵션 ' + r.raw.mainstat +
+    detail: '부위 ' + r.raw.slot + ' / 주옵션 ' +
+      (r.mainstatDetail?.name ?? r.raw.mainstat) +
+      (r.mainstatDetail?.value == null ? '' :
+        ' ' + r.mainstatDetail.value + (r.mainstatDetail.unit === '%' ? '%' : '')) +
       ' / 부옵션 ' + statText(r) +
       ' / 장착 ' + (r.equippedCharacterName ?? '없음'),
   });
