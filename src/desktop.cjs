@@ -14,7 +14,8 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   app.whenReady().then(async () => {
-    const userRoot = app.getPath('userData');
+    // Development reuses existing local CLI files; packaged EXE uses private user storage.
+    const userRoot = app.isPackaged ? app.getPath('userData') : process.cwd();
     const [{ getDesktopState, exportDesktopReport }, { importAccountArchive }, { syncGameData }] =
       await Promise.all([
         import('./desktop-service.mjs'),
