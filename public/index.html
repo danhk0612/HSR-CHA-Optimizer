@@ -453,13 +453,14 @@ async function refreshState() {
       : '적·보스 별도 자료 미준비';
   }
   all = state.characters ?? [];
-  el('fullAccountSummary').textContent = state.ready
+  const fullAccountReady = desktop ? state.ready : !!(state.version && state.characters?.length);
+  el('fullAccountSummary').textContent = fullAccountReady
     ? '스캔 기준: 캐릭터 ' + (state.characters?.length ?? 0) + '명 · 광추 ' +
       state.lightCones + '개 · 유물 ' + state.relics +
       '개 · 모든 장착/미장착 장비 포함 (후보 필터 미적용)'
     : '게임 데이터 및 계정 JSON을 먼저 준비하세요.';
-  el('fullSaveSingle').disabled = !state.ready;
-  el('fullSaveFolder').disabled = !state.ready;
+  el('fullSaveSingle').disabled = !fullAccountReady;
+  el('fullSaveFolder').disabled = !fullAccountReady;
   if (desktop) el('analysisPreferences').value = state.analysisPreferences?.text ?? '';
   sheetRecords = state.characterStats ?? {};
   sheetFields = state.characterStatFields ?? {};
