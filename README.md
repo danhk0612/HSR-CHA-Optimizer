@@ -108,7 +108,7 @@ npm run verify:local-win
 **현재 데이터가 이미 준비되어 있다면 다시 스캔하거나 `npm run sync`를 실행할 필요가 없습니다.**
 
 ```powershell
-# 테스트 43건 + 실제 로컬 계정의 통합 출력 검증
+# 테스트 44건 + 실제 로컬 계정의 통합 출력 검증
 npm run verify
 
 # 로컬 브라우저 화면 실행 (Ctrl+C로 종료)
