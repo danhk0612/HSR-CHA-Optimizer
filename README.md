@@ -16,10 +16,10 @@
 - [x] 요구사항 및 개발 단계 정리
 - [x] StarRailRes 한국어 데이터 동기화 CLI 초안
 - [x] 단일 캐릭터 공개 데이터 Markdown/JSON 내보내기 CLI 초안
-- [ ] Windows GUI
-- [x] Reliquary Archiver·HSR-Scanner v4 파일 가져오기·계정 자료 출력 CLI 초안 (실제 JSON 검증 전)
-- [ ] UID 공개 전시 연동 및 Windows GUI
-- [ ] 내보내기 범위 선택 및 관련 데이터 결합
+- [x] 로컬 브라우저 GUI 시제품 (Node.js, EXE 패키징 전)
+- [x] Reliquary Archiver 0.20.0 실제 JSON 가져오기·기존 전체 출력 검증
+- [ ] UID 공개 전시 연동 및 독립형 Windows EXE 패키징
+- [x] AI용 간결 출력·미장착 유물 후보 선택·재료 한국어화 (실제 파일 기반 통합 검증)
 
 ### 개발용 실행
 
@@ -72,6 +72,42 @@ npm test
 - 개인정보 포함 자료는 반드시 `.local-data/account/`나 `exports/`에 저장하고 Git에 커밋하지 마세요.
 
 **주의:** Reliquary Archiver는 비공식 게임 네트워크 패킷 분석 도구입니다. 직접적인 사용 제재 사례는 공개 검색에서 확인하지 못했지만, HoYoverse의 공식 허가 또는 제재 면책이 있는 것은 아닙니다. 개인 사용도 예외가 되지 않습니다. 이 프로젝트는 Archiver 실행을 자동화하거나 패킷을 직접 분석하지 않고, 사용자 동의 하에 추출된 JSON만 읽습니다.
+
+### AI용 간결 출력 및 로컬 화면
+
+**현재 데이터가 이미 준비되어 있다면 다시 스캔하거나 `npm run sync`를 실행할 필요가 없습니다.**
+
+```powershell
+# 테스트 16건 + 실제 로컬 계정의 통합 출력 검증
+npm run verify
+
+# 로컬 브라우저 화면 실행 (Ctrl+C로 종료)
+npm run gui
+# 브라우저에서 http://127.0.0.1:8765 접속
+```
+
+GUI는 **Windows에서 실행하는 로컬 브라우저 기반 화면**이며 아직 독립형 EXE가 아닙니다. 127.0.0.1에만 바인딩하고 외부 계정/AI API에 자료를 보내지 않습니다. 캐릭터 다중 선택, 검색, 유물 후보 범위, 재료 포함 여부, Markdown/JSON 미리보기·복사·저장을 지원합니다.
+
+CLI만 사용할 때:
+
+```powershell
+# 아케론의 실제 육성 상태와 장착 장비만 간결하게
+node src/export-ai.mjs --character "아케론" --json
+
+# 미장착 유물 중 장착 세트와 동일한 5성만, 재료 포함
+node src/export-ai.mjs --character "아케론" --candidates equipped-sets --min-rarity 5 --resources --json
+
+# 미장착 유물 전체 (용량 증가)
+node src/export-ai.mjs --character "아케론" --candidates all --json
+```
+
+- `--character`는 여러 번 지정 가능하며, 기본값 없이 **선택한 캐릭터만** 내보냅니다.
+- `--candidates` 기본값은 `none`; `equipped-sets`는 **선택 캐릭터가 장착한 세트와 같은 미장착 유물**만, `all`은 모든 미장착 유물을 포함합니다.
+- 필요하면 `--candidate-set "유물 세트 이름"`, `--min-rarity 5`, `--limit 100`으로 범위를 좁힐 수 있습니다. 후보의 우열·점수는 계산하지 않습니다.
+- `--resources`는 성옥과 재료/티켓 보유량을 포함합니다. 재료 ID를 한국어 원본에 연결하고 매칭되지 않으면 영어 이름과 미매칭 표시를 남깁니다.
+- 출력에 계정 UID는 포함되지 않습니다. 다만 장비 고유 식별자는 후보 식별을 위해 유지합니다.
+- **실제 최종 캐릭터 능력치**, 전투 중 버프 수치, 워프 천장/확정 상태는 확보되지 않았으며 계산값으로 대체하지 않습니다.
+- AI용 간결 출력은 기존 `export:account`의 전체 원본 출력과 **별도 기능**입니다. 기존 출력은 유지됩니다.
 
 ## 문서
 
