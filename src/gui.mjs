@@ -5,6 +5,7 @@ import { loadAccountData } from './account-files.mjs';
 import { buildAiReport, toAiMarkdown, resolveCharacterName } from './ai-report.mjs';
 import { buildCandidateFilterOptions } from './relic-filters.mjs';
 import { exportPublicData } from './public-data-files.mjs';
+import { readLatestGameChangeReport } from './game-changes.mjs';
 
 // Local-only preview UI. No game process, remote server, or AI API access.
 const data = await loadAccountData();
@@ -23,6 +24,7 @@ const server = createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
     res.end(JSON.stringify({
       version: data.manifest.version, importedAt: data.imported.importedAt,
+      gameChanges: await readLatestGameChangeReport(process.cwd()),
       characters: characterList, lightCones: data.scanner.light_cones?.length ?? 0,
       relics: data.scanner.relics?.length ?? 0,
       unequippedRelics: data.scanner.relics?.filter(item => !item.location).length ?? null,
