@@ -116,6 +116,8 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
               'importShowcase'].every(id => !!document.getElementById(id)),
             publicControls: ['publicType','publicSearch','publicGenerate','publicResult']
               .every(id => !!document.getElementById(id)),
+            syncHistoryControls: ['syncHistory','syncHistorySummary','syncHistoryRows']
+              .every(id => !!document.getElementById(id)),
             exportButton: !!document.getElementById('generate'),
             candidateFilterControls: ['candidateFilterArea', 'candidateSetChoices',
               'candidateSlotChoices', 'candidateMainChoices', 'candidateSubChoices']
