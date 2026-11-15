@@ -316,6 +316,7 @@ let all = [], output = '', outputFormat = 'json';
 let publicOutput = '', publicOutputFormat = 'json';
 let sheetRecords = {}, sheetFields = {}, sheetComparisons = {};
 let warpPools = {}, warpRecords = {};
+let inventoryLoaded = false;
 el('warpPanel').hidden = !desktop;
 el('enemyPrepareArea').hidden = !desktop;
 
@@ -613,6 +614,7 @@ async function refreshState() {
   render();
   renderSheetEditor(true);
   renderWarpOptions(true);
+  if (inventoryLoaded) await loadInventoryExplorer();
 }
 await refreshState();
 el('fullSaveFolder').hidden = !desktop;
@@ -941,4 +943,323 @@ el('save').addEventListener('click', async () => {
   a.click();
   URL.revokeObjectURL(url);
 });
+
+/* The new explorer reads only the already-scanned account inventory.
+   All filtering and sorting here changes display/selection, not scanner data. */
+let inventoryCatalog = null;
+let inventoryRows = [];
+let inventoryFiltered = [];
+let inventorySelected = new Set();
+let inventoryPage = 0;
+const INVENTORY_PAGE_SIZE = 50;
+const invChoiceMap = [
+  ['invRarities', 'rarities', 'invRarityCount', 'rarity'],
+  ['invElements', 'elements', 'invElementCount', 'element'],
+  ['invPaths', 'paths', 'invPathCount', 'path'],
+  ['invSets', 'sets', 'invSetCount', 'setId'],
+  ['invSlots', 'slots', 'invSlotCount', 'slot'],
+  ['invMainstats', 'mainstats', 'invMainCount', 'mainstat'],
+  ['invSubstats', 'substats', 'invSubCount', 'substats'],
+];
+const invText = val => val == null ? '' : String(val);
+const invNumber = id => {
+  const value = el(id).value.trim();
+  if (!value) return null;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+};
+function invChecked(container) {
+  return [...el(container).querySelectorAll('input:checked')].map(node => node.value);
+}
+function invBuildChoices() {
+  const fields = new Map(invChoiceMap.map(([id]) => [id, new Map()]));
+  for (const row of inventoryRows) {
+    const add = (id, value, label) => {
+      if (value == null || value === '') return;
+      fields.get(id).set(String(value), label ?? String(value));
+    };
+    add('invRarities', row.rarity, row.rarity == null ? '' : row.rarity + '성');
+    add('invElements', row.element, row.elementName ?? row.element);
+    add('invPaths', row.path, row.pathName ?? row.path);
+    add('invSets', row.setId, row.setName ?? row.setId);
+    add('invSlots', row.slot, ({
+      Head: '머리', Hands: '손', Body: '몸통', Feet: '다리',
+      'Planar Sphere': '차원 구체', 'Link Rope': '연결 매듭',
+    })[row.slot] ?? row.slot);
+    add('invMainstats', row.mainstat, row.mainstat);
+    for (const stat of row.substats ?? []) add('invSubstats', stat.key, stat.name ?? stat.key);
+  }
+  for (const [id, _filterName, countId] of invChoiceMap) {
+    const container = el(id);
+    container.replaceChildren();
+    const options = [...fields.get(id).entries()].sort((a, b) =>
+      a[1].localeCompare(b[1], 'ko', { numeric: true }));
+    for (const [key, label] of options) {
+      const line = document.createElement('label');
+      const check = document.createElement('input');
+      check.type = 'checkbox'; check.value = key;
+      check.addEventListener('change', () => { inventoryPage = 0; invDraw(); });
+      line.append(check, document.createTextNode(label));
+      container.append(line);
+    }
+    el(countId).textContent = '';
+  }
+  const subSelect = el('invStatKey');
+  subSelect.replaceChildren(new Option('제한 없음', ''));
+  for (const [key, label] of [...fields.get('invSubstats').entries()].sort((a,b)=>
+    a[1].localeCompare(b[1], 'ko'))) subSelect.append(new Option(label, key));
+}
+function invReadFilter() {
+  return {
+    group: el('inventoryGroup').value, query: el('inventorySearch').value.trim().toLocaleLowerCase('ko'),
+    rarities: invChecked('invRarities').map(Number),
+    elements: invChecked('invElements'),
+    paths: invChecked('invPaths'), sets: invChecked('invSets'),
+    slots: invChecked('invSlots'), mainstats: invChecked('invMainstats'),
+    substats: invChecked('invSubstats'),
+    minLevel: invNumber('invMinLevel'), maxLevel: invNumber('invMaxLevel'),
+    minEidolon: invNumber('invMinEidolon'), minSuper: invNumber('invMinSuper'),
+    minCount: invNumber('invMinCount'), equipped: el('invEquipped').value,
+    locked: el('invLocked').value, discard: el('invDiscard').value,
+    statKey: el('invStatKey').value, minStatValue: invNumber('invStatValue'),
+    minStatCount: invNumber('invStatCount'), sortBy: el('invSort').value,
+    descending: el('invDirection').value === 'desc',
+  };
+}
+function invFilter(rows, filter) {
+  const any = (values, actual) => !values.length || values.includes(actual);
+  const min = (v, m) => m == null || (v != null && v >= m);
+  const max = (v, m) => m == null || (v != null && v <= m);
+  const matched = rows.filter(x => {
+    if (filter.group !== 'all' && x.group !== filter.group) return false;
+    if (filter.query && ![x.name, x.id, x.setName, x.equippedName].some(v =>
+      invText(v).toLocaleLowerCase('ko').includes(filter.query))) return false;
+    if (!any(filter.rarities, x.rarity) || !any(filter.elements, x.element) ||
+        !any(filter.paths, x.path) || !any(filter.sets, x.setId) ||
+        !any(filter.slots, x.slot) || !any(filter.mainstats, x.mainstat)) return false;
+    if (!min(x.level, filter.minLevel) || !max(x.level, filter.maxLevel) ||
+        !min(x.eidolon, filter.minEidolon) || !min(x.superimposition, filter.minSuper) ||
+        !min(x.count, filter.minCount)) return false;
+    if (filter.equipped !== 'all' && x.equipped !== filter.equipped) return false;
+    if (filter.locked !== 'all' && String(x.locked) !== filter.locked) return false;
+    if (filter.discard !== 'all' && String(x.discard) !== filter.discard) return false;
+    const stats = x.substats ?? [];
+    if (filter.substats.length && !filter.substats.every(key =>
+      stats.some(st => st.key === key))) return false;
+    if (filter.statKey) {
+      const stat = stats.find(st => st.key === filter.statKey);
+      if (!stat || !min(stat.value, filter.minStatValue) ||
+          !min(stat.count, filter.minStatCount)) return false;
+    }
+    return true;
+  });
+  const textFields = new Set(['name', 'setName', 'mainstat', 'equipped']);
+  const numeric = new Set(['rarity', 'level', 'eidolon', 'superimposition', 'count']);
+  const field = filter.sortBy;
+  matched.sort((a,b) => {
+    const left = a[field], right = b[field];
+    if (left == null && right != null) return 1;
+    if (right == null && left != null) return -1;
+    if (left == null && right == null) return a.key.localeCompare(b.key);
+    const diff = numeric.has(field) ? left - right :
+      textFields.has(field) ? String(left).localeCompare(String(right), 'ko') : 0;
+    return diff * (filter.descending ? -1 : 1) || a.key.localeCompare(b.key);
+  });
+  return matched;
+}
+function invDraw() {
+  if (!inventoryCatalog) return;
+  for (const [id, _field, countId] of invChoiceMap) {
+    const count = invChecked(id).length;
+    el(countId).textContent = count ? '(' + count + ')' : '';
+  }
+  inventoryFiltered = invFilter(inventoryRows, invReadFilter());
+  const totalPages = Math.max(1, Math.ceil(inventoryFiltered.length / INVENTORY_PAGE_SIZE));
+  inventoryPage = Math.max(0, Math.min(inventoryPage, totalPages - 1));
+  el('inventoryCount').textContent = '검색 결과 ' + inventoryFiltered.length +
+    '개 / 전체 ' + inventoryRows.length + '개 · 선택 ' + inventorySelected.size + '개';
+  el('inventorySummary').textContent = Object.entries(inventoryCatalog.counts).map(
+    ([key, n]) => (inventoryCatalog.groups[key] ?? key) + ' ' + n).join(' · ');
+  el('invPage').textContent = (inventoryPage + 1) + ' / ' + totalPages;
+  el('invPrev').disabled = inventoryPage <= 0;
+  el('invNext').disabled = inventoryPage + 1 >= totalPages;
+  const body = el('inventoryRows'); body.replaceChildren();
+  const page = inventoryFiltered.slice(
+    inventoryPage * INVENTORY_PAGE_SIZE,
+    (inventoryPage + 1) * INVENTORY_PAGE_SIZE);
+  for (const item of page) {
+    const tr = document.createElement('tr');
+    const box = document.createElement('input'); box.type = 'checkbox';
+    box.checked = inventorySelected.has(item.key);
+    box.setAttribute('aria-label', item.name + ' 선택');
+    box.addEventListener('change', () => {
+      if (box.checked) inventorySelected.add(item.key);
+      else inventorySelected.delete(item.key);
+      el('inventoryCount').textContent = '검색 결과 ' + inventoryFiltered.length +
+        '개 / 전체 ' + inventoryRows.length + '개 · 선택 ' + inventorySelected.size + '개';
+    });
+    const tick = document.createElement('td'); tick.append(box);
+    const name = document.createElement('td');
+    const strong = document.createElement('div'); strong.className = 'inventory-item-name';
+    strong.textContent = item.name;
+    const group = document.createElement('small');
+    group.textContent = (inventoryCatalog.groups[item.group] ?? item.group) + ' · ' + item.id;
+    name.append(strong, group);
+    const score = document.createElement('td');
+    score.textContent = [item.rarity == null ? null : item.rarity + '성',
+      item.level == null ? null : (item.group === 'relics' || item.group === 'ornaments'
+        ? '+' + item.level : 'Lv.' + item.level),
+      item.eidolon == null ? null : '성혼 ' + item.eidolon,
+      item.superimposition == null ? null : '중첩 ' + item.superimposition,
+      item.count == null ? null : '×' + item.count,
+    ].filter(Boolean).join(' · ') || '-';
+    const extra = document.createElement('td');
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = [item.setName, item.slot, item.mainstat,
+      item.equippedName ? '장착: ' + item.equippedName : null,
+      item.substats?.length ? item.substats.map(s => (s.name ?? s.key) + ' ' + s.value).join(', ') : null,
+    ].filter(Boolean).join(' · ') || '상세';
+    const pre = document.createElement('pre');
+    pre.textContent = JSON.stringify(item, null, 2);
+    details.append(summary, pre); extra.append(details);
+    tr.append(tick, name, score, extra); body.append(tr);
+  }
+  if (!page.length) {
+    const tr = document.createElement('tr'), td = document.createElement('td');
+    td.colSpan = 4; td.textContent = '조건에 맞는 항목이 없습니다.';
+    tr.append(td); body.append(tr);
+  }
+}
+function invResetFilters(keepGroup = false) {
+  const group = el('inventoryGroup').value;
+  for (const [id] of invChoiceMap) {
+    for (const input of el(id).querySelectorAll('input')) input.checked = false;
+  }
+  for (const id of ['inventorySearch','invMinLevel','invMaxLevel','invMinEidolon',
+    'invMinSuper','invMinCount','invStatValue','invStatCount']) el(id).value = '';
+  for (const id of ['invEquipped','invLocked','invDiscard']) el(id).value = 'all';
+  el('invStatKey').value = ''; el('invSort').value = 'name';
+  el('invDirection').value = 'asc';
+  el('inventoryGroup').value = keepGroup ? group : 'all';
+  inventoryPage = 0; invDraw();
+}
+function invRequest() {
+  return {
+    keys: [...inventorySelected], format: el('inventoryOutputFormat').value,
+    includeGacha: el('invIncludeGacha').checked,
+    includeWarp: el('invIncludeWarp').checked,
+    includeSupplemental: el('invIncludeSupplemental').checked,
+    includeReference: el('invIncludeReference').checked,
+  };
+}
+async function invGenerate(request) {
+  if (desktop) return desktop.exportSelectedInventory(request);
+  const response = await fetch('/api/inventory/export', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return { text: await response.text(),
+    extension: request.format === 'html' ? 'html' : request.format === 'markdown' ? 'md' : 'json' };
+}
+async function loadInventoryExplorer() {
+  const status = el('inventoryExportStatus');
+  try {
+    const catalog = desktop ? await desktop.getInventoryCatalog() :
+      await (async () => {
+        const res = await fetch('/api/inventory/catalog');
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      })();
+    inventoryCatalog = catalog;
+    inventoryRows = catalog.rows;
+    inventorySelected = new Set([...inventorySelected].filter(key =>
+      inventoryRows.some(row => row.key === key)));
+    invBuildChoices(); invDraw();
+    status.textContent = '스캔된 계정 자료만 표시합니다. 기존 저장된 원본은 변경하지 않습니다.';
+  } catch (error) {
+    inventoryCatalog = null; inventoryRows = [];
+    inventorySelected.clear();
+    el('inventoryRows').replaceChildren();
+    el('inventoryCount').textContent = '계정 자료를 가져온 후 탐색할 수 있습니다.';
+    el('inventorySummary').textContent = '게임 데이터 및 계정 JSON 필요';
+    status.textContent = '계정 자료 준비 전: ' + error.message;
+  }
+}
+for (const id of ['inventorySearch','invMinLevel','invMaxLevel','invMinEidolon',
+  'invMinSuper','invMinCount','invStatValue','invStatCount']) {
+  el(id).addEventListener('input', () => { inventoryPage = 0; invDraw(); });
+}
+for (const id of ['invEquipped','invLocked','invDiscard','invStatKey','invSort','invDirection']) {
+  el(id).addEventListener('change', () => { inventoryPage = 0; invDraw(); });
+}
+el('inventoryGroup').addEventListener('change', () => invResetFilters(true));
+el('invReset').addEventListener('click', () => invResetFilters(false));
+el('invPrev').addEventListener('click', () => { inventoryPage--; invDraw(); });
+el('invNext').addEventListener('click', () => { inventoryPage++; invDraw(); });
+el('inventorySelectFiltered').addEventListener('click', () => {
+  for (const row of inventoryFiltered) inventorySelected.add(row.key);
+  invDraw();
+});
+el('inventoryClearFiltered').addEventListener('click', () => {
+  for (const row of inventoryFiltered) inventorySelected.delete(row.key);
+  invDraw();
+});
+el('inventorySelectAll').addEventListener('click', () => {
+  for (const row of inventoryRows) inventorySelected.add(row.key);
+  invDraw();
+});
+el('inventoryClearAll').addEventListener('click', () => {
+  inventorySelected.clear(); invDraw();
+});
+el('inventoryPreview').addEventListener('click', async () => {
+  const request = invRequest();
+  if (!request.keys.length) {
+    el('inventoryExportStatus').textContent = '출력할 항목을 먼저 선택하세요.'; return;
+  }
+  el('inventoryPreview').disabled = true;
+  try {
+    const result = await invGenerate(request);
+    el('inventoryPreviewText').value = request.format === 'html'
+      ? 'HTML 문서는 파일 저장 후 브라우저에서 열어 확인하거나 인쇄할 수 있습니다.'
+      : result.text.slice(0, 20000) +
+        (result.text.length > 20000 ? '\n\n… 미리보기 20,000자 제한 (저장 시 전체 출력)' : '');
+    el('inventoryExportStatus').textContent = '미리보기 생성 완료 · ' +
+      request.keys.length + '개 선택. 저장 시 전체 데이터가 출력됩니다.';
+  } catch (error) {
+    el('inventoryExportStatus').textContent = '미리보기 생성 실패: ' + error.message;
+  } finally { el('inventoryPreview').disabled = false; }
+});
+el('inventoryExport').addEventListener('click', async () => {
+  const request = invRequest();
+  if (!request.keys.length) {
+    el('inventoryExportStatus').textContent = '출력할 항목을 먼저 선택하세요.'; return;
+  }
+  el('inventoryExport').disabled = true;
+  el('inventoryExportStatus').textContent = '선택한 자료 저장 중…';
+  try {
+    if (desktop) {
+      const result = await desktop.saveSelectedInventory(request);
+      el('inventoryExportStatus').textContent = result
+        ? request.keys.length + '개 항목 저장 완료: ' + result.path
+        : '파일 저장 취소';
+    } else {
+      const result = await invGenerate(request);
+      const blob = new Blob([result.text], {
+        type: request.format === 'html' ? 'text/html;charset=utf-8' : 'text/plain;charset=utf-8',
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url; anchor.download = 'hsr-account-selected.' + result.extension;
+      anchor.click(); URL.revokeObjectURL(url);
+      el('inventoryExportStatus').textContent = request.keys.length + '개 항목 다운로드 요청 완료';
+    }
+  } catch (error) {
+    el('inventoryExportStatus').textContent = '저장 실패: ' + error.message;
+  } finally { el('inventoryExport').disabled = false; }
+});
+inventoryLoaded = true;
+await loadInventoryExplorer();
+
 </script></body></html>
