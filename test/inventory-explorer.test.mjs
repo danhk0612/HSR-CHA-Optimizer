@@ -179,3 +179,27 @@ test('JSON, Markdown and HTML format preserve explicit selection metadata', () =
   assert.match(formatSelectedInventory(selection, 'markdown').text, /광추 5성/);
   assert.match(formatSelectedInventory(selection, 'html').text, /<html lang="ko">/);
 });
+
+test('selected output respects chosen sorting independent of original scan order', () => {
+  const selection = selectInventoryForExport(account, {
+    keys: ['lightCone:0', 'lightCone:1', 'character:0', 'character:1'],
+    sortBy: 'level', descending: false,
+  });
+  assert.deepEqual(selection.lightCones.map(c => c.key), ['lightCone:1', 'lightCone:0']);
+  assert.deepEqual(selection.characters.map(c => c.key), ['character:1', 'character:0']);
+  assert.equal(selection.selection.sortBy, 'level');
+  assert.equal(selection.selection.descending, false);
+});
+
+test('readable HTML includes chosen optional resource sections and has no gender field', () => {
+  const selection = selectInventoryForExport(account, {
+    keys: ['relic:1', 'material:0'], includeGacha: true,
+    includeWarp: true, includeSupplemental: true, includeReference: true,
+  });
+  const html = selectedInventoryToHtml(selection);
+  assert.match(html, /보유 가챠 재화/);
+  assert.match(html, /수동 천장 기록/);
+  assert.match(html, /선택 장비의 원본 효과/);
+  assert.match(html, /개인 분석 조건/);
+  assert.equal(html.includes('gender'), false);
+});
