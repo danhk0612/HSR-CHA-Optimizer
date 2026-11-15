@@ -89,7 +89,7 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 <button id="manualSheetSave" type="button">화면 능력치 저장</button>
 <button id="manualSheetClear" type="button" class="secondary">선택 캐릭터의 수동 입력 삭제</button>
 </div>
-<p>수동 값은 입력한 항목만 기록합니다. 미입력 능력치는 0으로 취급하지 않습니다. JSON 가져오기는 이미 내려받은 MiHoMo Parsed 형식만 허용하며 UID를 외부에 요청하지 않습니다.</p>
+<p>퍼센트 능력치는 게임 화면 그대로 입력합니다(예: 치명타 확률 65.3% → 65.3). 수동 값은 입력한 항목만 기록합니다. 미입력 능력치는 0으로 취급하지 않습니다. JSON 가져오기는 이미 내려받은 MiHoMo Parsed 형식만 허용하며 UID를 외부에 요청하지 않습니다.</p>
 </section>
 <section class="panel public-editor" id="publicEditor">
 <h2>공개 게임 자료 검색</h2>
@@ -308,9 +308,9 @@ if (desktop) {
     try {
       await desktop.saveManualSheet(id, values);
       await refreshState();
-      el('message').textContent = '게임 화면에서 입력한 능력치를 로컬에 저장했습니다.';
+      el('sheetStatus').textContent = '게임 화면에서 입력한 능력치를 로컬에 저장했습니다.';
     } catch (error) {
-      el('message').textContent = '능력치 저장 실패: ' + error.message;
+      el('sheetStatus').textContent = '능력치 저장 실패: ' + error.message;
     } finally {
       el('manualSheetSave').disabled = false;
     }
@@ -322,9 +322,9 @@ if (desktop) {
     try {
       await desktop.clearManualSheet(id);
       await refreshState();
-      el('message').textContent = '선택 캐릭터의 수동 입력 능력치를 삭제했습니다.';
+      el('sheetStatus').textContent = '선택 캐릭터의 수동 입력 능력치를 삭제했습니다.';
     } catch (error) {
-      el('message').textContent = '수동 입력 삭제 실패: ' + error.message;
+      el('sheetStatus').textContent = '수동 입력 삭제 실패: ' + error.message;
     } finally {
       el('manualSheetClear').disabled = false;
     }
@@ -335,11 +335,11 @@ if (desktop) {
       const imported = await desktop.importSavedShowcase();
       if (imported) {
         await refreshState();
-        el('message').textContent = '공개 전시 JSON ' + imported.characters +
+        el('sheetStatus').textContent = '공개 전시 JSON ' + imported.characters +
           '명 연결 완료 (외부 통신 없이 로컬에서 처리)';
       }
     } catch (error) {
-      el('message').textContent = '공개 전시 JSON 가져오기 실패: ' + error.message;
+      el('sheetStatus').textContent = '공개 전시 JSON 가져오기 실패: ' + error.message;
     } finally {
       el('importShowcase').disabled = false;
     }
