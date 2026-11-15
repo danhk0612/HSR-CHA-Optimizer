@@ -5,6 +5,7 @@ import { buildAiReport, toAiMarkdown, resolveCharacterName } from './ai-report.m
 import { buildCandidateFilterOptions } from './relic-filters.mjs';
 import { exportPublicData } from './public-data-files.mjs';
 import { readLatestGameChangeReport } from './game-changes.mjs';
+import { compareCharacterSheet } from './stat-comparison.mjs';
 import { readCharacterStats, getCharacterStatsSummary, MANUAL_STAT_FIELDS,
   saveManualCharacterStats, clearManualCharacterStats, importMihomoParsed } from './character-stats.mjs';
 
@@ -24,6 +25,7 @@ export async function getDesktopState(root) {
     candidateFilterOptions: { sets: [], slots: [], mainstats: [], substats: [] },
     characterStatFields: MANUAL_STAT_FIELDS,
     characterStats: {},
+    characterStatComparisons: {},
     characterStatsSummary: { manual: 0, showcase: 0 },
   };
   if (gameReady) {
@@ -50,6 +52,10 @@ export async function getDesktopState(root) {
     unequippedRelics: data.scanner.relics?.filter(item => !item.location).length ?? null,
     candidateFilterOptions: buildCandidateFilterOptions(data.scanner, data.tables),
     characterStats: sheet.characters,
+    characterStatComparisons: Object.fromEntries(
+      (data.scanner.characters ?? [])
+        .map(item => [String(item.id), compareCharacterSheet(sheet.characters[String(item.id)], item)])
+        .filter(([, comparison]) => comparison !== null)),
     characterStatsSummary: getCharacterStatsSummary(sheet),
   };
 }
