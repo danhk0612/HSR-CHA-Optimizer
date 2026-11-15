@@ -5,7 +5,9 @@ const { mkdtempSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 
 const smokeTest = process.argv.includes('--smoke-test');
-const smokeRoot = smokeTest ? mkdtempSync(join(tmpdir(), 'hsr-cha-smoke-')) : null;
+const realAccountSmoke = process.argv.includes('--smoke-real-account');
+const smokeMode = smokeTest || realAccountSmoke;
+const smokeRoot = smokeMode ? mkdtempSync(join(tmpdir(), 'hsr-cha-smoke-')) : null;
 if (smokeRoot) {
   app.setPath('userData', smokeRoot);
   app.on('quit', () => {
@@ -13,7 +15,7 @@ if (smokeRoot) {
   });
 }
 
-if (!smokeTest && !app.requestSingleInstanceLock()) {
+if (!smokeMode && !app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', () => {
@@ -26,7 +28,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
 
   app.whenReady().then(async () => {
     // Development reuses existing local CLI files; packaged EXE uses private user storage.
-    const userRoot = smokeRoot ?? (app.isPackaged ? app.getPath('userData') : process.cwd());
+    const userRoot = realAccountSmoke ? process.cwd() : (smokeRoot ?? (app.isPackaged ? app.getPath('userData') : process.cwd()));
     const [{ getDesktopState, getInventoryCatalog, exportSelectedInventory, saveAccountAnalysisPreferences }, { importAccountArchive }, { syncGameData }] =
       await Promise.all([
         import('./desktop-service.mjs'),
@@ -36,7 +38,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
 
     const win = new BrowserWindow({
       title: 'HSR-CHA-Optimizer',
-      show: !smokeTest,
+      show: !smokeMode,
       width: 1280,
       height: 850,
       minWidth: 900,
@@ -60,11 +62,13 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
     ipcMain.handle('hsr:inventory-save', async (_, request) => {
       const extension = request?.format === 'html' ? 'html'
         : request?.format === 'markdown' ? 'md' : 'json';
-      const chosen = await dialog.showSaveDialog(win, {
-        title: '선택한 계정 자료 저장',
-        defaultPath: join(app.getPath('documents'), 'hsr-account-selected.' + extension),
-        filters: [{ name: extension.toUpperCase(), extensions: [extension] }],
-      });
+      const chosen = realAccountSmoke
+        ? { canceled: false, filePath: join(smokeRoot, 'real-selected.' + extension) }
+        : await dialog.showSaveDialog(win, {
+          title: '선택한 계정 자료 저장',
+          defaultPath: join(app.getPath('documents'), 'hsr-account-selected.' + extension),
+          filters: [{ name: extension.toUpperCase(), extensions: [extension] }],
+        });
       if (chosen.canceled || !chosen.filePath) return null;
       const result = await exportSelectedInventory(userRoot, request);
       await writeFile(chosen.filePath, result.text, 'utf8');
@@ -94,6 +98,21 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
       }
     });
     await win.loadFile(join(__dirname, '..', 'public', 'index.html'));
+    if (realAccountSmoke) {
+      try {
+        const { runRealAccountSmoke } = require('./real-account-smoke.cjs');
+        const summary = await runRealAccountSmoke({
+          win, root: userRoot, smokeRoot, getDesktopState,
+          getInventoryCatalog,
+        });
+        console.log('Electron real-account GUI smoke PASS: ' + JSON.stringify(summary));
+        app.exit(0);
+      } catch (error) {
+        console.error('Electron real-account GUI smoke FAIL:', error);
+        app.exit(1);
+      }
+      return;
+    }
     if (smokeTest) {
       try {
         // Step 1: the actual packaged renderer must open without any personal account.
