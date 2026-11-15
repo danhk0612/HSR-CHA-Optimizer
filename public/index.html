@@ -1147,6 +1147,7 @@ function invResetFilters(keepGroup = false) {
 function invRequest() {
   return {
     keys: [...inventorySelected], format: el('inventoryOutputFormat').value,
+    sortBy: el('invSort').value, descending: el('invDirection').value === 'desc',
     includeGacha: el('invIncludeGacha').checked,
     includeWarp: el('invIncludeWarp').checked,
     includeSupplemental: el('invIncludeSupplemental').checked,
