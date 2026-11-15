@@ -1,0 +1,20 @@
+# User/private data & downloaded game resources
+.local-data/
+data/
+exports/
+*.local.json
+.env
+.env.*
+
+# Node / build
+node_modules/
+dist/
+build/
+coverage/
+*.log
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
