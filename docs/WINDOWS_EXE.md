@@ -16,14 +16,14 @@
 ```powershell
 git pull --ff-only
 npm install --no-audit --no-fund
-npm run verify:win
+npm run verify:local-win
 ```
 
 완료되면 아래 파일이 생성됩니다.
 
 `dist/HSR-CHA-Optimizer-0.1.2-portable.exe`
 
-**0.1.1은 사용자 Windows 11에서 테스트 22건 통과, EXE 생성 및 동기화·가져오기·내보내기·저장 실사용 확인까지 완료했습니다.** 0.1.2의 `verify:win`은 26건 단위 테스트 → 새 EXE 빌드 → 숨겨진 Electron GUI 실행 확인을 순서대로 수행합니다. 원본 게임 데이터와 계정 자료는 그대로 유지됩니다.
+**0.1.1은 사용자 Windows 11에서 테스트 22건 통과, EXE 생성 및 동기화·가져오기·내보내기·저장 실사용 확인까지 완료했습니다.** 0.1.2의 `verify:local-win`은 26건 단위 테스트 → 개인 PC에 저장된 실계정 통합 검증 → 새 EXE 빌드 → 숨겨진 Electron GUI 실행 확인을 순서대로 수행합니다. GitHub Actions에서는 개인 파일을 읽지 않는 `verify:win`을 사용합니다. 원본 게임 데이터와 계정 자료는 그대로 유지됩니다.
 
 개발 상태의 Electron 창을 열려면 `npm run desktop` 을 사용합니다. 이때는 프로젝트의 기존 `.local-data/` 파일을 그대로 사용하므로 기존 데이터 재수집이 필요 없습니다.
 
