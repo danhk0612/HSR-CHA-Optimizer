@@ -2,6 +2,17 @@
 // Do not simulate in-game final stats or score relics.
 const SKILL_TYPES = { basic: 'Normal', skill: 'BPSkill', ult: 'Ultra', talent: 'Talent' };
 
+export function resolveCharacterName(owned, tables) {
+  const ref = tables.characters?.[String(owned.id)];
+  const original = ref?.name ?? owned.name ?? '';
+  if (!original.includes('{NICKNAME}')) return original;
+  const path = tables.paths?.[ref?.path]?.name;
+  const element = tables.elements?.[ref?.element]?.name;
+  const variant = [path, element].filter(Boolean).join(' · ');
+  // The actual account nickname is not present in the scanner export.
+  return variant ? `개척자 (${variant})` : `개척자 (${owned.id})`;
+}
+
 function compactRelic(item, tables) {
   return {
     inventoryId: item._uid ?? null,
@@ -58,7 +69,7 @@ function compactCharacter(owned, tables, lightCones, relics) {
   const ref = tables.characters?.[String(owned.id)];
   const base = {
     id: String(owned.id),
-    name: ref?.name ?? owned.name,
+    name: resolveCharacterName(owned, tables),
     level: owned.level,
     ascension: owned.ascension,
     eidolon: owned.eidolon,
@@ -75,9 +86,17 @@ function compactCharacter(owned, tables, lightCones, relics) {
     .filter(e => e && e.rank <= owned.eidolon)
     .map(e => ({ rank: e.rank, name: e.name, description: e.desc }));
   const majorTraces = [1, 2, 3]
-    .map(n => tables.character_skill_trees?.[`${owned.id}10${n}`])
-    .filter(Boolean)
-    .map(e => ({ name: e.name, descriptionTemplate: e.desc, params: e.params }));
+    .map(n => {
+      const definition = tables.character_skill_trees?.[`${owned.id}10${n}`];
+      if (!definition) return null;
+      return {
+        name: definition.name,
+        descriptionTemplate: definition.desc,
+        params: definition.params,
+        unlocked: owned.traces?.[`ability_${n}`] === true,
+      };
+    })
+    .filter(Boolean);
   const counts = Object.create(null);
   for (const relic of relics) {
     const id = String(relic.set_id);
