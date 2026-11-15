@@ -9,7 +9,7 @@ h1{font-size:24px;margin:0 0 8px}h2{font-size:17px;margin:0 0 16px}p{color:#a6b4
 main{display:grid;grid-template-columns:minmax(250px,340px) minmax(430px,1fr);gap:20px;margin-top:22px}
 .panel{background:#171f32;border:1px solid #2a3852;border-radius:14px;padding:20px;min-width:0}
 .stats{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#a6b4cc}b{color:#fff}
-input,select,textarea,button{font:inherit}input[type=text],select,textarea{width:100%;background:#0e1728;border:1px solid #3d4a64;border-radius:8px;color:#eef;padding:10px}
+input,select,textarea,button{font:inherit}input[type=text],input[type=number],select,textarea{width:100%;background:#0e1728;border:1px solid #3d4a64;border-radius:8px;color:#eef;padding:10px}
 label{display:block;font-size:13px;margin:12px 0 6px}.roster{margin-top:12px;max-height:560px;overflow-y:auto;border:1px solid #32405a;border-radius:8px}
 .person{display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid #263149;cursor:pointer}.person:last-child{border:0}.person:hover{background:#202d45}
 .person input{accent-color:#81a9fa}.person small{margin-left:auto;color:#a6b4cc;white-space:nowrap}
@@ -29,6 +29,12 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 .candidate-filter-option{display:flex;gap:8px;align-items:center;font-size:12px;margin:0;padding:6px 3px;cursor:pointer}
 .candidate-filter-option span{min-width:0;flex:1}.candidate-filter-option small{color:#a6b4cc;white-space:nowrap}
 .candidate-filter-area>p{margin:11px 4px 0}
+.stats-editor{margin-top:20px}.stats-editor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.stats-editor-head p{margin:4px 0 10px}.stats-fields{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin:14px 0}
+.stats-fields label{display:flex;flex-direction:column;gap:5px;margin:0}
+.stats-fields input{width:100%}.stats-editor .actions{margin:10px 0}
+@media(max-width:900px){.stats-fields{grid-template-columns:repeat(3,minmax(120px,1fr))}}
+@media(max-width:560px){.stats-fields{grid-template-columns:repeat(2,minmax(120px,1fr))}}
 @media(max-width:650px){.candidate-filter-grid{grid-template-columns:1fr}}
 @media(max-width:850px){main{grid-template-columns:1fr}.shell{padding:15px}header{align-items:start;flex-direction:column}}
 </style></head>
@@ -66,12 +72,78 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 <label for="format">출력 형식</label><select id="format"><option value="json">JSON</option><option value="markdown">Markdown</option></select>
 <div class="actions"><button id="generate">자료 생성</button><button id="copy" class="secondary" disabled>복사</button><button id="save" class="secondary" disabled>파일 저장</button></div>
 <label for="result">미리보기</label><textarea id="result" readonly placeholder="캐릭터를 선택하고 자료 생성을 누르세요."></textarea>
-<p id="message" role="status"></p></section></main></div>
+<p id="message" role="status"></p></section></main>
+<section class="panel stats-editor" id="sheetEditor" hidden>
+<div class="stats-editor-head">
+<div>
+<h2>캐릭터 최종 능력치 보완</h2>
+<p>수동 입력은 실제 게임 캐릭터 상세 화면의 값을 적으세요. 공개 전시 JSON은 원본 스캔과 별도로 보관하며 계산된 자료임을 표시합니다.</p>
+</div>
+<button id="importShowcase" class="secondary" type="button">저장된 MiHoMo JSON 가져오기</button>
+</div>
+<label for="manualStatCharacter">능력치를 기록할 캐릭터</label>
+<select id="manualStatCharacter"><option value="">캐릭터를 선택하세요</option></select>
+<p id="sheetStatus">능력치 자료 없음</p>
+<div class="stats-fields" id="sheetFields"></div>
+<div class="actions">
+<button id="manualSheetSave" type="button">화면 능력치 저장</button>
+<button id="manualSheetClear" type="button" class="secondary">선택 캐릭터의 수동 입력 삭제</button>
+</div>
+<p>수동 값은 입력한 항목만 기록합니다. 미입력 능력치는 0으로 취급하지 않습니다. JSON 가져오기는 이미 내려받은 MiHoMo Parsed 형식만 허용하며 UID를 외부에 요청하지 않습니다.</p>
+</section>
+</div>
 <script type="module">
 const el = id => document.getElementById(id);
 const desktop = window.hsrDesktop ?? null;
 const selected = new Set();
 let all = [], output = '', outputFormat = 'json';
+let sheetRecords = {}, sheetFields = {};
+el('sheetEditor').hidden = !desktop;
+
+function renderSheetInputs() {
+  const id = el('manualStatCharacter').value;
+  const entry = sheetRecords[id] ?? {};
+  const area = el('sheetFields');
+  area.replaceChildren();
+  el('sheetStatus').textContent = !id
+    ? '캐릭터를 선택하면 게임 화면에서 확인한 능력치를 입력할 수 있습니다.'
+    : (entry.manual ? '수동 입력 존재 · ' : '수동 입력 없음 · ') +
+      (entry.showcase ? '공개 전시 파일 존재' : '공개 전시 파일 없음');
+  for (const [field, meta] of Object.entries(sheetFields)) {
+    const label = document.createElement('label');
+    const title = document.createElement('span');
+    title.textContent = meta.name + (meta.unit === '%' ? ' (%)' : '');
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.step = 'any';
+    input.min = 0;
+    input.dataset.stat = field;
+    input.placeholder = '미입력';
+    input.value = entry.manual?.values?.[field] ?? '';
+    input.disabled = !id;
+    label.append(title, input);
+    area.append(label);
+  }
+}
+
+function renderSheetEditor(preserveSelection) {
+  if (!desktop) return;
+  const chooser = el('manualStatCharacter');
+  const previous = preserveSelection ? chooser.value : '';
+  chooser.replaceChildren();
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = '캐릭터를 선택하세요';
+  chooser.append(placeholder);
+  for (const item of all) {
+    const option = document.createElement('option');
+    option.value = item.id;
+    option.textContent = item.name + ' (Lv.' + item.level + ')';
+    chooser.append(option);
+  }
+  if (previous && all.some(item => item.id === previous)) chooser.value = previous;
+  renderSheetInputs();
+}
 const filterGroups = [
   { field: 'setIds', source: 'sets', target: 'candidateSetChoices', counter: 'candidateSetCount' },
   { field: 'slots', source: 'slots', target: 'candidateSlotChoices', counter: 'candidateSlotCount' },
@@ -167,6 +239,8 @@ function render() {
 async function refreshState() {
   const state = desktop ? await desktop.getState() : await fetch('/api/state').then(r => r.json());
   all = state.characters ?? [];
+  sheetRecords = state.characterStats ?? {};
+  sheetFields = state.characterStatFields ?? {};
   selected.clear();
   invalidateOutput();
   const gameText = state.version ?? '미설치';
@@ -186,6 +260,7 @@ async function refreshState() {
         (!state.accountReady ? 'Reliquary Archiver JSON 가져오기 필요' : '');
   }
   render();
+  renderSheetEditor(true);
 }
 await refreshState();
 el('filter').addEventListener('input', render);
@@ -198,6 +273,54 @@ for (const id of ['minRarity','candidateLimit','resources','format']) {
 }
 
 if (desktop) {
+  el('manualStatCharacter').addEventListener('change', renderSheetInputs);
+  el('manualSheetSave').addEventListener('click', async () => {
+    const id = el('manualStatCharacter').value;
+    if (!id) { el('message').textContent = '능력치를 저장할 캐릭터를 선택하세요.'; return; }
+    const values = {};
+    for (const input of el('sheetFields').querySelectorAll('input[data-stat]')) {
+      if (input.value.trim()) values[input.dataset.stat] = Number(input.value);
+    }
+    el('manualSheetSave').disabled = true;
+    try {
+      await desktop.saveManualSheet(id, values);
+      await refreshState();
+      el('message').textContent = '게임 화면에서 입력한 능력치를 로컬에 저장했습니다.';
+    } catch (error) {
+      el('message').textContent = '능력치 저장 실패: ' + error.message;
+    } finally {
+      el('manualSheetSave').disabled = false;
+    }
+  });
+  el('manualSheetClear').addEventListener('click', async () => {
+    const id = el('manualStatCharacter').value;
+    if (!id) return;
+    el('manualSheetClear').disabled = true;
+    try {
+      await desktop.clearManualSheet(id);
+      await refreshState();
+      el('message').textContent = '선택 캐릭터의 수동 입력 능력치를 삭제했습니다.';
+    } catch (error) {
+      el('message').textContent = '수동 입력 삭제 실패: ' + error.message;
+    } finally {
+      el('manualSheetClear').disabled = false;
+    }
+  });
+  el('importShowcase').addEventListener('click', async () => {
+    el('importShowcase').disabled = true;
+    try {
+      const imported = await desktop.importSavedShowcase();
+      if (imported) {
+        await refreshState();
+        el('message').textContent = '공개 전시 JSON ' + imported.characters +
+          '명 연결 완료 (외부 통신 없이 로컬에서 처리)';
+      }
+    } catch (error) {
+      el('message').textContent = '공개 전시 JSON 가져오기 실패: ' + error.message;
+    } finally {
+      el('importShowcase').disabled = false;
+    }
+  });
   desktop.onSyncProgress(p => {
     el('setupStatus').textContent = '게임 데이터 동기화 ' + p.done + '/' + p.total + ': ' + p.filename;
   });
