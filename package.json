@@ -1,6 +1,6 @@
 {
   "name": "hsr-cha-optimizer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Local Honkai: Star Rail data collector and AI-ready exporter (no AI integration)",
@@ -18,7 +18,9 @@
     "test": "node --test",
     "verify": "node --test && node src/verify.mjs",
     "desktop": "electron .",
-    "dist:win": "electron-builder --win portable --x64"
+    "dist:win": "electron-builder --win portable --x64",
+    "smoke:win": "node scripts/smoke-windows.mjs",
+    "verify:win": "npm test && npm run dist:win && npm run smoke:win"
   },
   "main": "src/desktop.cjs",
   "devDependencies": {
@@ -48,7 +50,8 @@
           ]
         }
       ],
-      "artifactName": "HSR-CHA-Optimizer-${version}-portable.${ext}"
+      "artifactName": "HSR-CHA-Optimizer-${version}-portable.${ext}",
+      "icon": "build/icon.svg"
     }
   }
 }
