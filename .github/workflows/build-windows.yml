@@ -28,3 +28,39 @@ jobs:
           path: dist/*.exe
           if-no-files-found: error
           retention-days: 14
+
+  publish-release:
+    name: Publish verified v0.1.10 prerelease
+    needs: windows-portable
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'release: publish verified Windows v0.1.10 prerelease' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download verified Windows build
+        uses: actions/download-artifact@v4
+        with:
+          name: HSR-CHA-Optimizer-Windows-Portable
+          path: release
+      - name: Verify release inputs
+        shell: bash
+        run: |
+          test -s release/HSR-CHA-Optimizer-0.1.10-portable.exe
+          test -s docs/RELEASE_NOTES_0.1.10.md
+          sha256sum release/HSR-CHA-Optimizer-0.1.10-portable.exe
+      - name: Publish verified prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view v0.1.10 >/dev/null 2>&1; then
+            echo "::error::Release v0.1.10 already exists; refusing to overwrite"
+            exit 1
+          fi
+          gh release create v0.1.10 \
+            release/HSR-CHA-Optimizer-0.1.10-portable.exe \
+            --target "${GITHUB_SHA}" \
+            --title "HSR-CHA-Optimizer v0.1.10" \
+            --notes-file docs/RELEASE_NOTES_0.1.10.md \
+            --prerelease
