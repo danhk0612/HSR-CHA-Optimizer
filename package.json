@@ -9,6 +9,7 @@
   },
   "scripts": {
     "sync": "node src/sync.mjs",
+    "import:archive": "node src/import-scanner.mjs",
     "import:scanner": "node src/import-scanner.mjs",
     "export:account": "node src/export-account.mjs",
     "export:character": "node src/export-character.mjs",
