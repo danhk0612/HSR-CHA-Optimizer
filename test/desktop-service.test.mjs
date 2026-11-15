@@ -61,19 +61,30 @@ test('desktop imports actual v4-compatible file, labels Trailblazer and excludes
         { id: '1308', level: 80, eidolon: 1, skills: { basic: 6 }, traces: {} },
       ],
       light_cones: [],
-      relics: [],
+      relics: [
+        { _uid: 'r1', set_id: '110', slot: 'Head', level: 15, rarity: 5, mainstat: 'HP', substats: [], location: '1308' },
+        { _uid: 'r2', set_id: '110', slot: 'Feet', level: 0, rarity: 5, mainstat: 'SPD', substats: [], location: '' },
+        { _uid: 'r3', set_id: '111', slot: 'Body', level: 0, rarity: 5, mainstat: 'ATK', substats: [], location: '' },
+      ],
     };
     await writeFile(source, JSON.stringify(archive), 'utf8');
     const imported = await importAccountArchive(source, root);
     assert.equal(imported.characters, 2);
     const state = await getDesktopState(root);
     assert.equal(state.ready, true);
+    assert.equal(state.unequippedRelics, 2);
     assert.equal(state.characters.find(item => item.id === '8002').name, '개척자 (파멸 · 물리)');
     const output = await exportDesktopReport(root, { characterIds: ['1308'], format: 'json' });
     const data = JSON.parse(output);
     assert.equal(data.characters[0].name, '아케론');
     assert.equal(data.characters.length, 1);
     assert.ok(!output.includes('123456789'));
+    const candidateOutput = JSON.parse(await exportDesktopReport(root, {
+      characterIds: ['1308'], candidateMode: 'all', candidateLimit: 1, format: 'json',
+    }));
+    assert.equal(candidateOutput.candidates.matching, 2);
+    assert.equal(candidateOutput.candidates.included, 1);
+    assert.equal(candidateOutput.candidates.relics.length, 1);
     const saved = JSON.parse(await readFile(join(root, '.local-data', 'account', 'scanner.json'), 'utf8'));
     assert.equal(saved.metadata.uid, 123456789);
   } finally {
