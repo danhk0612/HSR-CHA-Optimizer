@@ -1,5 +1,14 @@
 # Windows 독립 실행 파일 (Portable EXE)
 
+## GitHub 시험 배포 (v0.1.10)
+
+- [v0.1.10 Release 페이지](https://github.com/danhk0612/HSR-CHA-Optimizer/releases/tag/v0.1.10) — Windows x64 Portable EXE 다운로드
+- 파일명: `HSR-CHA-Optimizer-0.1.10-portable.exe` (110,346,138바이트, 코드 서명 없음)
+- SHA-256: `9f5181e568a9ecff50b096937ce9ec8d6d4f067e3416a5aa1a6121e5e8ca7767`
+- GitHub Actions 실행 [#43697588405](https://github.com/danhk0612/HSR-CHA-Optimizer/actions/runs/43697588405)에서 테스트 97/97, Windows 빌드, Electron GUI 스모크, Release 게시 모두 통과
+- 개인 계정 JSON·다운로드한 게임 원본 데이터는 EXE에 포함되지 않습니다. 첫 실행에는 사용자가 별도로 준비해야 합니다.
+- 사용자 Windows에서 시험 배포된 EXE의 저장 대화상자·HTML 화면을 직접 조작한 최종 검사는 미완료입니다.
+
 ## 구현 구조
 
 - **Electron 45.3.2**: 기존 HTML GUI를 자체 Chromium 창에서 표시
