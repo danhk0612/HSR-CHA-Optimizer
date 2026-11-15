@@ -8,7 +8,10 @@ assert.equal(manifest.language, 'kr', '한국어 게임 데이터가 필요합�
 assert.ok(scanner.characters?.length, '캐릭터 수집 목록이 비었습니다.');
 assert.ok(scanner.relics?.length, '유물 수집 목록이 비었습니다.');
 assert.ok(scanner.light_cones?.length, '광추 수집 목록이 비었습니다.');
-const id = String(scanner.characters.find(item => tables.characters?.[String(item.id)])?.id ?? '');
+const withGear = scanner.characters.find(item =>
+  tables.characters?.[String(item.id)] && scanner.relics.some(relic => String(relic.location) === String(item.id))
+);
+const id = String((withGear ?? scanner.characters.find(item => tables.characters?.[String(item.id)]))?.id ?? '');
 assert.ok(id, '원본 데이터와 연결할 수 있는 캐릭터가 없습니다.');
 const report = buildAiReport(scanner, tables, manifest, {
   characterIds: [id], candidateMode: 'equipped-sets', minRarity: 5,
