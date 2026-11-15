@@ -3,6 +3,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('hsrDesktop', {
   getState: () => ipcRenderer.invoke('hsr:state'),
   exportData: (options) => ipcRenderer.invoke('hsr:export', options),
+  exportFullAccount: (mode) => ipcRenderer.invoke('hsr:full-account-export', { mode }),
+  saveAnalysisPreferences: (text) => ipcRenderer.invoke('hsr:analysis-preferences-save', text),
   exportPublicData: (options) => ipcRenderer.invoke('hsr:public-export', options),
   prepareEnemies: () => ipcRenderer.invoke('hsr:enemy-sync'),
   onEnemyProgress: (callback) => {
