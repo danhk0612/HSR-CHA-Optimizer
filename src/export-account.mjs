@@ -52,11 +52,13 @@ if (jsonOutput) {
     ['보유 캐릭터', report.characters],
     ['보유 광추', report.lightCones],
     ['보유 유물', report.relics],
+    ['성옥·오래된 꿈(수집된 경우)', report.gacha],
+    ['육성 재료 보유량(수집된 경우)', report.materials],
     ['광추·유물 원본 효과', report.reference],
     ['원본 매칭 실패 ID', report.unmatchedGameIds],
   ];
   const title = '# 스타레일 개인 계정 육성 데이터';
-  const head = title + '\n\n출처: HSR-Scanner + StarRailRes\n\n';
+  const head = title + '\n\n출처: ' + report.metadata.accountSource + ' + StarRailRes\n\n';
   const markdown = head + '## 출처 및 버전\n\n\`\`\`json\n'
     + JSON.stringify(report.metadata, null, 2) + '\n\`\`\`\n\n'
     + sections.map(([name, data]) =>
