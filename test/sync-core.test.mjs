@@ -11,6 +11,7 @@ const rawFiles = [
   'character_skill_trees', 'character_promotions',
   'light_cones', 'light_cone_ranks', 'light_cone_promotions',
   'relics', 'relic_sets', 'relic_main_affixes', 'relic_sub_affixes', 'items',
+  'simulated_blessings', 'simulated_curios', 'simulated_events', 'simulated_blocks',
 ];
 
 function source(rejectFile = '') {
@@ -23,7 +24,7 @@ function source(rejectFile = '') {
   };
 }
 
-test('shared game sync downloads 16 indexed tables and stores manifest for desktop', async () => {
+test('shared game sync downloads 20 indexed tables and stores manifest for desktop', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hsr-sync-'));
   try {
     const events = [];
@@ -31,11 +32,13 @@ test('shared game sync downloads 16 indexed tables and stores manifest for deskt
     assert.equal(result.version, '4.7.0');
     assert.equal(result.language, 'kr');
     assert.equal(result.files.length, rawFiles.length);
-    assert.equal(events.length, 16);
+    assert.equal(events.length, 20);
     const current = JSON.parse(await readFile(join(root, '.local-data', 'game', 'current.json'), 'utf8'));
     assert.equal(current.version, '4.7.0');
     const items = JSON.parse(await readFile(join(root, '.local-data', 'game', '4.7.0', 'kr', 'items.json'), 'utf8'));
     assert.ok(items.sample);
+    const blessing = JSON.parse(await readFile(join(root, '.local-data', 'game', '4.7.0', 'kr', 'simulated_blessings.json'), 'utf8'));
+    assert.ok(blessing.sample);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
