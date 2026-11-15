@@ -29,7 +29,7 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 .candidate-filter-option{display:flex;gap:8px;align-items:center;font-size:12px;margin:0;padding:6px 3px;cursor:pointer}
 .candidate-filter-option span{min-width:0;flex:1}.candidate-filter-option small{color:#a6b4cc;white-space:nowrap}
 .candidate-filter-area>p{margin:11px 4px 0}
-.stats-editor{margin-top:20px}.stats-editor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.public-editor{margin-top:20px}#publicResult{height:260px}.stats-editor{margin-top:20px}.stats-editor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .stats-editor-head p{margin:4px 0 10px}.stats-fields{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin:14px 0}
 .stats-fields label{display:flex;flex-direction:column;gap:5px;margin:0}
 .stats-fields input{width:100%}.stats-editor .actions{margin:10px 0}
@@ -91,12 +91,35 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 </div>
 <p>수동 값은 입력한 항목만 기록합니다. 미입력 능력치는 0으로 취급하지 않습니다. JSON 가져오기는 이미 내려받은 MiHoMo Parsed 형식만 허용하며 UID를 외부에 요청하지 않습니다.</p>
 </section>
+<section class="panel public-editor" id="publicEditor">
+<h2>공개 게임 자료 검색</h2>
+<p>StarRailRes 한국어 데이터에 포함된 시뮬레이션 우주 자료를 검색합니다. 캐릭터 육성/계정 정보는 전송하지 않습니다. 이전 16종 데이터만 있다면 게임 데이터 동기화가 필요합니다.</p>
+<div class="row">
+<div><label for="publicType">자료 종류</label><select id="publicType">
+<option value="blessings">축복</option><option value="curios">기물</option>
+<option value="events">사건</option><option value="blocks">구역</option></select></div>
+<div><label for="publicLimit">최대 개수 (1~200)</label><input id="publicLimit" type="number" min="1" max="200" step="1" value="20"></div>
+<div><label for="publicFormat">출력 형식</label><select id="publicFormat">
+<option value="json">JSON</option><option value="markdown">Markdown</option></select></div>
+</div>
+<label for="publicSearch">한국어 이름 또는 원본 ID 검색 (비워두면 전체에서 앞부분)</label>
+<input id="publicSearch" type="text" placeholder="예: 보존">
+<div class="actions">
+<button id="publicGenerate" type="button">자료 검색·생성</button>
+<button id="publicCopy" class="secondary" type="button" disabled>복사</button>
+<button id="publicSave" class="secondary" type="button" disabled>파일 저장</button>
+</div>
+<label for="publicResult">공개 자료 미리보기</label>
+<textarea id="publicResult" readonly placeholder="자료 종류와 검색어를 선택하세요."></textarea>
+<p id="publicMessage" role="status"></p>
+</section>
 </div>
 <script type="module">
 const el = id => document.getElementById(id);
 const desktop = window.hsrDesktop ?? null;
 const selected = new Set();
 let all = [], output = '', outputFormat = 'json';
+let publicOutput = '', publicOutputFormat = 'json';
 let sheetRecords = {}, sheetFields = {};
 el('sheetEditor').hidden = !desktop;
 
@@ -394,6 +417,81 @@ el('generate').addEventListener('click', async () => {
   } finally {
     el('generate').disabled = false;
   }
+});
+
+for (const field of ['publicType','publicLimit','publicFormat','publicSearch']) {
+  el(field).addEventListener('input', () => {
+    publicOutput = '';
+    el('publicResult').value = '';
+    el('publicCopy').disabled = true;
+    el('publicSave').disabled = true;
+  });
+}
+el('publicGenerate').addEventListener('click', async () => {
+  const opts = {
+    type: el('publicType').value,
+    query: el('publicSearch').value,
+    limit: Number(el('publicLimit').value),
+    format: el('publicFormat').value,
+  };
+  if (!Number.isInteger(opts.limit) || opts.limit < 1 || opts.limit > 200) {
+    el('publicMessage').textContent = '최대 개수는 1~200이어야 합니다.';
+    return;
+  }
+  el('publicGenerate').disabled = true;
+  try {
+    let response;
+    if (desktop) response = await desktop.exportPublicData(opts);
+    else {
+      const http = await fetch('/api/public', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(opts),
+      });
+      if (!http.ok) throw new Error(await http.text());
+      response = await http.json();
+    }
+    publicOutput = response.text;
+    publicOutputFormat = opts.format;
+    el('publicResult').value = publicOutput;
+    el('publicCopy').disabled = false;
+    el('publicSave').disabled = false;
+    el('publicMessage').textContent = '조건 일치 ' + response.total +
+      '건 · 출력 ' + response.included + '건';
+  } catch (error) {
+    publicOutput = '';
+    el('publicCopy').disabled = true;
+    el('publicSave').disabled = true;
+    el('publicMessage').textContent = '공개 자료 검색 실패: ' + error.message;
+  } finally {
+    el('publicGenerate').disabled = false;
+  }
+});
+el('publicCopy').addEventListener('click', async () => {
+  try {
+    if (desktop) await desktop.copyText(publicOutput);
+    else await navigator.clipboard.writeText(publicOutput);
+    el('publicMessage').textContent = '공개 자료를 복사했습니다.';
+  } catch (error) {
+    el('publicMessage').textContent = '복사 실패: ' + error.message;
+  }
+});
+el('publicSave').addEventListener('click', async () => {
+  if (desktop) {
+    try {
+      const saved = await desktop.saveText({ text: publicOutput, format: publicOutputFormat });
+      if (saved) el('publicMessage').textContent = '공개 자료 저장 완료';
+    } catch (error) {
+      el('publicMessage').textContent = '저장 실패: ' + error.message;
+    }
+    return;
+  }
+  const extension = publicOutputFormat === 'json' ? 'json' : 'md';
+  const url = URL.createObjectURL(new Blob([publicOutput], { type: 'text/plain;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'hsr-public-data.' + extension;
+  link.click();
+  URL.revokeObjectURL(url);
 });
 
 el('copy').addEventListener('click', async () => {
