@@ -73,6 +73,25 @@ test('desktop shows latest public game data changes before importing an account'
   }
 });
 
+test('desktop shows opt-in enemy data readiness without account data', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hsr-enemy-desktop-'));
+  try {
+    await prepareGame(root);
+    assert.equal((await getDesktopState(root)).enemyData.prepared, false);
+    const folder = join(root, '.local-data', 'game', 'enemies');
+    await mkdir(folder, { recursive: true });
+    await writeFile(join(folder, 'index.json'), JSON.stringify({
+      total: 665, sourceGameVersion: '4.7.0', nameResolved: 600, nameUnresolved: 65,
+      enemies: [],
+    }), 'utf8');
+    const state = await getDesktopState(root);
+    assert.equal(state.ready, false);
+    assert.equal(state.enemyData.prepared, true);
+    assert.equal(state.enemyData.total, 665);
+    assert.equal(state.enemyData.nameUnresolved, 65);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('desktop imports actual v4-compatible file, labels Trailblazer and excludes UID from AI exports', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hsr-desktop-import-'));
   try {
