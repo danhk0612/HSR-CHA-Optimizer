@@ -73,6 +73,8 @@ test('desktop imports actual v4-compatible file, labels Trailblazer and excludes
     const state = await getDesktopState(root);
     assert.equal(state.ready, true);
     assert.equal(state.unequippedRelics, 2);
+    assert.deepEqual(state.candidateFilterOptions.sets.map(item => item.value), ['110', '111']);
+    assert.ok(state.candidateFilterOptions.slots.some(item => item.value === 'Body'));
     assert.equal(state.characters.find(item => item.id === '8002').name, '개척자 (파멸 · 물리)');
     const output = await exportDesktopReport(root, { characterIds: ['1308'], format: 'json' });
     const data = JSON.parse(output);
@@ -85,6 +87,18 @@ test('desktop imports actual v4-compatible file, labels Trailblazer and excludes
     assert.equal(candidateOutput.candidates.matching, 2);
     assert.equal(candidateOutput.candidates.included, 1);
     assert.equal(candidateOutput.candidates.relics.length, 1);
+    const precise = JSON.parse(await exportDesktopReport(root, {
+      characterIds: ['1308'], candidateMode: 'all', format: 'json',
+      candidateFilters: { setIds: ['111'], slots: ['Body'], mainstats: ['ATK'] },
+    }));
+    assert.deepEqual(precise.candidates.relics.map(item => item.inventoryId), ['r3']);
+    assert.equal(precise.candidates.matching, 1);
+    assert.deepEqual(precise.candidates.filters.setIds, ['111']);
+    const restricted = JSON.parse(await exportDesktopReport(root, {
+      characterIds: ['1308'], candidateMode: 'equipped-sets', format: 'json',
+      candidateFilters: { setIds: ['111'] },
+    }));
+    assert.equal(restricted.candidates.matching, 0);
     const saved = JSON.parse(await readFile(join(root, '.local-data', 'account', 'scanner.json'), 'utf8'));
     assert.equal(saved.metadata.uid, 123456789);
   } finally {
