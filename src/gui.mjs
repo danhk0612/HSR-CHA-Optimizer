@@ -10,6 +10,7 @@ import { readCharacterStats } from './character-stats.mjs';
 import { readWarpState } from './warp-state.mjs';
 import { readAnalysisPreferences } from './analysis-preferences.mjs';
 import { buildFullAccountReport } from './full-account-export.mjs';
+import { buildInventoryCatalog, selectInventoryForExport, formatSelectedInventory } from './inventory-explorer.mjs';
 
 // Local-only preview UI. No game process, remote server, or AI API access.
 const data = await loadAccountData();
@@ -18,6 +19,18 @@ const characterList = data.scanner.characters.map(item => ({
   id: String(item.id), name: resolveCharacterName(item, data.tables),
   level: item.level, eidolon: item.eidolon,
 })).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+async function getReport() {
+  const [characterStats, manualWarpState, analysis] = await Promise.all([
+    readCharacterStats(process.cwd(), data.scanner),
+    readWarpState(process.cwd(), data.scanner),
+    readAnalysisPreferences(process.cwd(), data.scanner),
+  ]);
+  return buildFullAccountReport(data.scanner, data.tables, data.manifest, {
+    importedAt: data.imported.importedAt,
+    characterStats, manualWarpState, analysisPreferences: analysis.text,
+  });
+}
 
 const server = createServer(async (req, res) => {
   if (req.method === 'GET' && req.url === '/') {
@@ -35,17 +48,42 @@ const server = createServer(async (req, res) => {
       candidateFilterOptions: buildCandidateFilterOptions(data.scanner, data.tables),
     })); return;
   }
+  if (req.method === 'GET' && req.url === '/api/inventory/catalog') {
+    try {
+      const catalog = buildInventoryCatalog(await getReport());
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store' });
+      res.end(JSON.stringify(catalog));
+    } catch (error) {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end(error.message);
+    }
+    return;
+  }
+  if (req.method === 'POST' && req.url === '/api/inventory/export') {
+    try {
+      const chunks = [];
+      let received = 0;
+      for await (const chunk of req) {
+        received += chunk.length;
+        if (received > 524288) throw new Error('출력 요청 크기 제한을 초과했습니다.');
+        chunks.push(chunk);
+      }
+      const request = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      const selected = selectInventoryForExport(await getReport(), request);
+      const result = formatSelectedInventory(selected, request.format);
+      const type = request.format === 'html' ? 'text/html' : 'text/plain';
+      res.writeHead(200, { 'Content-Type': type + '; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(result.text);
+    } catch (error) {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end(error.message);
+    }
+    return;
+  }
   if (req.method === 'POST' && req.url === '/api/full-account') {
     try {
-      const [characterStats, manualWarpState, analysis] = await Promise.all([
-        readCharacterStats(process.cwd(), data.scanner),
-        readWarpState(process.cwd(), data.scanner),
-        readAnalysisPreferences(process.cwd(), data.scanner),
-      ]);
-      const report = buildFullAccountReport(data.scanner, data.tables, data.manifest, {
-        importedAt: data.imported.importedAt,
-        characterStats, manualWarpState, analysisPreferences: analysis.text,
-      });
+      const report = await getReport();
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8',
         'Content-Disposition': 'attachment; filename="hsr-account-complete.json"',
         'Cache-Control': 'no-store' });
