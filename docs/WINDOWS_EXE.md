@@ -23,7 +23,7 @@ npm run verify:local-win
 
 `dist/HSR-CHA-Optimizer-0.1.10-portable.exe`
 
-**0.1.9는 사용자 Windows에서 90건 단위 테스트·실계정 75/445/2649·EXE 빌드·Electron 실행을 검증했습니다.** 0.1.10의 `verify:local-win`은 95건 단위 테스트 → 실제 계정 탐색/선택 출력 검증 → EXE 빌드 → 새로운 탭 구조 Electron 실행 검사를 순서대로 수행합니다. GitHub Actions에서는 개인 파일을 읽지 않는 `verify:win`을 사용합니다. 원본 게임 데이터와 계정 자료는 그대로 유지됩니다.
+**0.1.9는 사용자 Windows에서 90건 단위 테스트·실계정 75/445/2649·EXE 빌드·Electron 실행을 검증했습니다.** 0.1.10의 `verify:local-win`은 96건 단위 테스트 → 실제 계정 탐색/선택 출력 검증 → EXE 빌드 → **임시 가상 계정으로 Electron 탭 검색/필터/정렬/일괄 선택/파일 저장 조작 검사**를 순서대로 수행합니다. GitHub Actions에서는 개인 파일을 읽지 않는 `verify:win`을 사용합니다. 원본 게임 데이터와 계정 자료는 그대로 유지됩니다.
 
 개발 상태의 Electron 창을 열려면 `npm run desktop` 을 사용합니다. 이때는 프로젝트의 기존 `.local-data/` 파일을 그대로 사용하므로 기존 데이터 재수집이 필요 없습니다.
 
@@ -100,7 +100,7 @@ Portable EXE를 실행하면 자체 Windows 창이 열립니다.
 
 ## 현재 남은 작업
 
-- Windows 0.1.10 EXE 빌드·종류별 독립 검색/선택·복수 종류 출력 JSON/Markdown/HTML 실제 실행 확인 (`npm run verify:local-win`)
+- Windows 0.1.10의 강화된 Electron 조작 검사(합성 자료) 및 빌드 검증 (`npm run verify:local-win`). 실제 사용자 계정에서 파일 저장 버튼 조작은 별도 확인이 필요합니다.
 - 0.1.10에서는 각 자료 종류별 필터 조건을 조합하고 해당 종류의 검색 결과를 페이지 제한 없이 일괄 선택할 수 있습니다.
 - **별도 프로그램 아이콘 SVG 적용됨** (`build/icon.svg`, electron-builder 변환); 미서명 EXE 유지
 - 설치형 배포는 현재 범위에서 제외 (Portable 우선)
