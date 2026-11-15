@@ -1,8 +1,19 @@
 const { app, BrowserWindow, ipcMain, dialog, clipboard } = require('electron');
 const { join } = require('node:path');
 const { writeFile } = require('node:fs/promises');
+const { mkdtempSync, rmSync } = require('node:fs');
+const { tmpdir } = require('node:os');
 
-if (!app.requestSingleInstanceLock()) {
+const smokeTest = process.argv.includes('--smoke-test');
+const smokeRoot = smokeTest ? mkdtempSync(join(tmpdir(), 'hsr-cha-smoke-')) : null;
+if (smokeRoot) {
+  app.setPath('userData', smokeRoot);
+  app.on('quit', () => {
+    try { rmSync(smokeRoot, { recursive: true, force: true }); } catch {}
+  });
+}
+
+if (!smokeTest && !app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', () => {
@@ -15,7 +26,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(async () => {
     // Development reuses existing local CLI files; packaged EXE uses private user storage.
-    const userRoot = app.isPackaged ? app.getPath('userData') : process.cwd();
+    const userRoot = smokeRoot ?? (app.isPackaged ? app.getPath('userData') : process.cwd());
     const [{ getDesktopState, exportDesktopReport }, { importAccountArchive }, { syncGameData }] =
       await Promise.all([
         import('./desktop-service.mjs'),
@@ -25,6 +36,7 @@ if (!app.requestSingleInstanceLock()) {
 
     const win = new BrowserWindow({
       title: 'HSR-CHA-Optimizer',
+      show: !smokeTest,
       width: 1280,
       height: 850,
       minWidth: 900,
@@ -78,6 +90,29 @@ if (!app.requestSingleInstanceLock()) {
       return true;
     });
     await win.loadFile(join(__dirname, '..', 'public', 'index.html'));
+    if (smokeTest) {
+      try {
+        const result = await win.webContents.executeJavaScript(`(async () => {
+          const api = window.hsrDesktop;
+          const state = api && await api.getState();
+          return {
+            bridge: !!api,
+            emptyState: state && state.ready === false,
+            toolbar: document.getElementById('desktopToolbar').hidden === false,
+            importButton: !!document.getElementById('importArchive'),
+            exportButton: !!document.getElementById('generate'),
+          };
+        })()`);
+        if (!Object.values(result).every(Boolean)) {
+          throw new Error('Electron GUI 검사 실패: ' + JSON.stringify(result));
+        }
+        console.log('Electron GUI smoke PASS: IPC bridge, empty state, import/export controls');
+        app.exit(0);
+      } catch (error) {
+        console.error(error);
+        app.exit(1);
+      }
+    }
   });
 
   app.on('window-all-closed', () => app.quit());
