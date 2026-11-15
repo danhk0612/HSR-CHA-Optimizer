@@ -39,6 +39,16 @@ const tables = {
     314: { id: '314', name: '이즈모', desc: ['2세트'] },
   },
   items: { 102: { id: '102', name: '별의 궤도 전용티켓' } },
+  relics: {
+    61101: { id: '61101', set_id: '110', rarity: 5, type: 'HEAD', main_affix_id: '51', max_level: 15 },
+  },
+  relic_main_affixes: {
+    51: { affixes: { 1: { property: 'HPDelta', base: 112.896, step: 39.5136 } } },
+  },
+  properties: {
+    HPDelta: { name: 'HP', percent: false },
+    SpeedDelta: { name: '속도', percent: false },
+  },
 };
 const manifest = { version: '4.7.0', source: 'StarRailRes', syncedAt: '2026-11-15T00:00:00Z' };
 const base = { characterIds: ['1308'] };
@@ -52,6 +62,8 @@ test('compact export includes only unlocked eidolons and selected skill coeffici
   assert.equal(result.characters[0].lightCones[0].name, '흘러가는 강가를 따라');
   assert.deepEqual(result.characters[0].lightCones[0].effect.paramsAtSuperimposition, [.36]);
   assert.equal(result.characters[0].relics.length, 2);
+  assert.equal(result.characters[0].relics[0].mainstatDetail.value, 705.6);
+  assert.equal(result.characters[0].relics[0].substats[0].name, '속도');
   assert.equal(result.characters[0].relicSetBonuses[0].active.length, 1);
   assert.equal(result.candidates, undefined);
   assert.equal(result.resources, undefined);
