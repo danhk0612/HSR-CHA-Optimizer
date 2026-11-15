@@ -1,5 +1,6 @@
 import { createRelicIndex, enrichRelic } from './relic-stats.mjs';
 import { filterCandidateRelics } from './relic-filters.mjs';
+import { statsForExport } from './character-stats.mjs';
 
 // Read-only AI hand-off: use original account values and Korean game definitions.
 // Do not simulate in-game final stats or score relics.
@@ -157,13 +158,18 @@ export function buildAiReport(scanner, tables, manifest, options = {}) {
     return item;
   });
   const relicIndex = createRelicIndex(tables.relics);
+  const providedStats = options.characterStats ?? { characters: {} };
   const selectedCharacters = wanted.map(owned => {
     const id = String(owned.id);
     const cones = (scanner.light_cones ?? []).filter(item => String(item.location) === id);
     const relics = (scanner.relics ?? []).filter(item => String(item.location) === id);
-    return compactCharacter(owned, tables, cones, relics, relicIndex);
+    const details = compactCharacter(owned, tables, cones, relics, relicIndex);
+    const sheet = statsForExport(providedStats, id);
+    return sheet ? { ...details, characterSheet: sheet } : details;
   });
   const candidates = selectCandidates(scanner, tables, wanted, options, relicIndex);
+  const observedCount = selectedCharacters.filter(c => c.characterSheet?.manualObserved).length;
+  const showcaseCount = selectedCharacters.filter(c => c.characterSheet?.publicShowcaseCalculated).length;
   const resources = options.includeResources ? {
     gacha: scanner.gacha ?? null,
     materials: (scanner.materials ?? []).map(item => ({
@@ -184,10 +190,15 @@ export function buildAiReport(scanner, tables, manifest, options = {}) {
       uidExcluded: true,
     },
     limitations: {
-      characterSheetStatsCollected: false,
+      characterSheetStatsCollected: observedCount > 0,
+      characterSheetCoverage: {
+        selectedCharacters: selectedCharacters.length,
+        manuallyObserved: observedCount,
+        publicShowcaseCalculated: showcaseCount,
+      },
       warpPityCollected: false,
       relicMainStatNumbers: 'StarRailRes 유물 주옵션 기본값+강화 계수로 산출. 원본 수집기가 직접 관측한 값이 아니며, 원본 매칭이 불가능하면 null.',
-      note: '캐릭터의 최종 능력치는 임의로 계산하지 않습니다. 유물 부옵션 원본 value는 유지하고 한국어 표시값을 별도 제공합니다. 스킬 설명의 #1[i] 등 표기는 원문이며 계수 배열은 별도로 제공됩니다.',
+      note: '게임 화면 수동 입력 수치는 관측값으로, Mihomo 공개 전시 JSON은 비공식 파싱 계산값으로 별도 표시합니다. 일부 캐릭터만 보완되었을 수 있으며, 부재한 캐릭터 능력치를 추정하지 않습니다. 유물 부옵션 value는 원본 그대로 유지합니다. 스킬 설명의 #1[i] 등은 원문 계수 표기입니다.',
     },
     characters: selectedCharacters,
     candidates: candidates.mode === 'none' ? undefined : candidates,
