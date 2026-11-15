@@ -8,6 +8,7 @@ const desktop = await readFile(join(process.cwd(), 'src', 'desktop.cjs'), 'utf8'
 const preload = await readFile(join(process.cwd(), 'src', 'desktop-preload.cjs'), 'utf8');
 const realSmoke = await readFile(join(process.cwd(), 'src', 'real-account-smoke.cjs'), 'utf8');
 const pkg = JSON.parse(await readFile(join(process.cwd(), 'package.json'), 'utf8'));
+const realSmokeRunner = await readFile(join(process.cwd(), 'scripts', 'smoke-real-windows.mjs'), 'utf8');
 
 
 test('the five data kinds are independent checkbox-enabled tabs, not one shared dropdown or search', () => {
@@ -89,6 +90,9 @@ test('real account smoke keeps account read-only and verifies three user-facing 
   assert.match(realSmoke, /new DOMParser\(\)/);
   assert.match(realSmoke, /htmlCheck\.rows !== 10/);
   assert.match(realSmoke, /temporaryOutputOnly: true/);
+  assert.match(realSmokeRunner, /await rm\(tempRoot, \{ recursive: true, force: true/);
+  assert.match(realSmokeRunner, /--smoke-temp-dir=/);
+  assert.match(desktop, /suppliedSmokeDir/);
   assert.match(pkg.scripts['verify:local-win'], /npm run smoke:real-win/);
   assert.doesNotMatch(pkg.scripts['verify:win'], /smoke:real-win/);
 });
