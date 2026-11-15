@@ -126,9 +126,10 @@ test('selecting specific items exports only selected records and preserves exter
   });
   assert.equal(output.characters.length, 0);
   assert.equal(output.lightCones.length, 1);
-  assert.equal(output.relics.length, 1);
-  assert.equal(output.relics[0].equippedCharacterName, '테스트 캐릭터');
-  assert.equal(output.relics[0].equippedBy.characterId, '1401');
+  assert.equal(output.relics.length, 0);
+  assert.equal(output.ornaments.length, 1);
+  assert.equal(output.ornaments[0].equippedCharacterName, '테스트 캐릭터');
+  assert.equal(output.ornaments[0].equippedBy.characterId, '1401');
   assert.deepEqual(output.selection.counts,
     { characters: 0, lightCones: 1, relics: 0, ornaments: 1, materials: 0 });
   assert.equal(output.selection.availableCounts.relics, 2);
@@ -202,4 +203,33 @@ test('readable HTML includes chosen optional resource sections and has no gender
   assert.match(html, /선택 장비의 원본 효과/);
   assert.match(html, /개인 분석 조건/);
   assert.equal(html.includes('gender'), false);
+});
+
+test('relics and planar ornaments remain separate in selected JSON and readable output', () => {
+  const selection = selectInventoryForExport(account, {
+    keys: ['relic:0', 'relic:1', 'relic:2'], includeReference: true,
+  });
+  assert.deepEqual(selection.relics.map(item => item.key), ['relic:0', 'relic:2']);
+  assert.deepEqual(selection.ornaments.map(item => item.key), ['relic:1']);
+  assert.equal(selection.selection.counts.relics, 2);
+  assert.equal(selection.selection.counts.ornaments, 1);
+  const json = JSON.parse(formatSelectedInventory(selection, 'json').text);
+  assert.equal(json.relics.length, 2);
+  assert.equal(json.ornaments.length, 1);
+  const markdown = formatSelectedInventory(selection, 'markdown').text;
+  assert.match(markdown, /## 유물 \(2개\)/);
+  assert.match(markdown, /## 차원 장신구 \(1개\)/);
+});
+test('per-category explicit output order is checked, then preserved', () => {
+  const keys = ['character:0', 'character:1', 'lightCone:0', 'lightCone:1'];
+  const selection = selectInventoryForExport(account, {
+    keys, orderKeys: ['lightCone:1', 'lightCone:0', 'character:1', 'character:0'],
+  });
+  assert.deepEqual(selection.lightCones.map(item => item.key), ['lightCone:1', 'lightCone:0']);
+  assert.deepEqual(selection.characters.map(item => item.key), ['character:1', 'character:0']);
+  assert.equal(selection.selection.sortBy, 'per-category');
+  assert.throws(() => selectInventoryForExport(account, { keys,
+    orderKeys: ['lightCone:1', 'lightCone:1', 'character:1', 'character:0'] }), /일치하지/);
+  assert.throws(() => selectInventoryForExport(account, { keys,
+    orderKeys: ['lightCone:1'] }), /일치하지/);
 });
