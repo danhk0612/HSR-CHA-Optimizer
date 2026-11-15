@@ -23,7 +23,7 @@ npm run verify:local-win
 
 `dist/HSR-CHA-Optimizer-0.1.10-portable.exe`
 
-**0.1.9는 사용자 Windows에서 90건 단위 테스트·실계정 75/445/2649·EXE 빌드·Electron 실행을 검증했습니다.** 0.1.10의 `verify:local-win`은 96건 단위 테스트 → 실제 계정 탐색/선택 출력 검증 → EXE 빌드 → **임시 가상 계정으로 Electron 탭 검색/필터/정렬/일괄 선택/파일 저장 조작 검사**를 순서대로 수행합니다. GitHub Actions에서는 개인 파일을 읽지 않는 `verify:win`을 사용합니다. 원본 게임 데이터와 계정 자료는 그대로 유지됩니다.
+**0.1.9는 사용자 Windows에서 90건 단위 테스트·실계정 75/445/2649·EXE 빌드·Electron 실행을 검증했습니다.** 0.1.10의 `verify:local-win`은 **97건 테스트 → 기존 실제 계정 정적 검증 → EXE 빌드 → 가상 계정 GUI 조작 검사 → 실제 로컬 계정 GUI 조작 및 JSON/Markdown/HTML 임시 저장 검사** 순서입니다. GitHub Actions에서는 개인 파일을 읽지 않는 `verify:win`을 사용합니다. 원본 게임 데이터와 계정 자료는 그대로 유지됩니다.
 
 개발 상태의 Electron 창을 열려면 `npm run desktop` 을 사용합니다. 이때는 프로젝트의 기존 `.local-data/` 파일을 그대로 사용하므로 기존 데이터 재수집이 필요 없습니다.
 
@@ -100,8 +100,12 @@ Portable EXE를 실행하면 자체 Windows 창이 열립니다.
 
 ## 현재 남은 작업
 
-- Windows 0.1.10의 강화된 Electron 조작 검사(합성 자료) 및 빌드 검증 (`npm run verify:local-win`). 실제 사용자 계정에서 파일 저장 버튼 조작은 별도 확인이 필요합니다.
+- Windows 0.1.10의 실계정 Electron 5종 탭/선택 및 JSON·Markdown·HTML 임시 파일 저장 검사 (`npm run verify:local-win`). 이 검사는 저장 대화상자를 우회해 임시 폴더만 사용하므로, 실제 사용자가 직접 파일 이름과 위치를 지정하는 흐름은 별도 확인이 필요합니다.
 - 0.1.10에서는 각 자료 종류별 필터 조건을 조합하고 해당 종류의 검색 결과를 페이지 제한 없이 일괄 선택할 수 있습니다.
 - **별도 프로그램 아이콘 SVG 적용됨** (`build/icon.svg`, electron-builder 변환); 미서명 EXE 유지
 - 설치형 배포는 현재 범위에서 제외 (Portable 우선)
 - 공개 전시 기반 일부 캐릭터의 실제 최종 능력치 도입 여부와 데이터 출처 검증 (docs/FINAL_STATS.md)
+
+### 실제 계정 Electron 자동 검사
+
+`npm run smoke:real-win`은 빌드된 `dist/win-unpacked/HSR-CHA-Optimizer.exe`를 실제 로컬 `.local-data/`로 실행합니다. 단, 사용자의 실제 파일은 읽기 전용으로 취급하고 출력은 테스트 전용 임시 폴더에 저장한 뒤 삭제합니다. 캐릭터·광추·일반 유물·차원 장신구·재료에서 각 두 항목을 선택해 탭별 검색/필터/정렬/선택 상태와 JSON·Markdown·HTML 파일 내용을 검사합니다. 계정 정보는 콘솔에 출력하지 않고 종류별 수량만 표시합니다. 로컬 `.local-data/`가 없는 GitHub Actions에서는 실행하지 않습니다.
