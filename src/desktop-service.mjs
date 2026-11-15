@@ -2,6 +2,7 @@ import { access, readFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { loadAccountData } from './account-files.mjs';
 import { buildAiReport, toAiMarkdown, resolveCharacterName } from './ai-report.mjs';
+import { buildCandidateFilterOptions } from './relic-filters.mjs';
 
 async function hasFile(path) {
   try { await access(path); return true; } catch { return false; }
@@ -15,6 +16,7 @@ export async function getDesktopState(root) {
     ready: false, gameReady, accountReady,
     version: null, importedAt: null,
     characters: [], lightCones: 0, relics: 0, unequippedRelics: null,
+    candidateFilterOptions: { sets: [], slots: [], mainstats: [], substats: [] },
   };
   if (gameReady) {
     const current = JSON.parse(await readFile(join(base, 'game', 'current.json'), 'utf8'));
@@ -36,6 +38,7 @@ export async function getDesktopState(root) {
     lightCones: data.scanner.light_cones?.length ?? 0,
     relics: data.scanner.relics?.length ?? 0,
     unequippedRelics: data.scanner.relics?.filter(item => !item.location).length ?? null,
+    candidateFilterOptions: buildCandidateFilterOptions(data.scanner, data.tables),
   };
 }
 
@@ -47,6 +50,7 @@ export async function exportDesktopReport(root, request) {
     candidateSetIds: request.candidateSetIds ?? [],
     minRarity: request.minRarity ?? 0,
     candidateLimit: request.candidateLimit,
+    candidateFilters: request.candidateFilters,
     includeResources: request.includeResources === true,
     importedAt: data.imported.importedAt,
   });
