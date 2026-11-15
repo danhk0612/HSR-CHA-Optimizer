@@ -91,6 +91,25 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 <div class="actions"><button id="generate">자료 생성</button><button id="copy" class="secondary" disabled>복사</button><button id="save" class="secondary" disabled>파일 저장</button></div>
 <label for="result">미리보기</label><textarea id="result" readonly placeholder="캐릭터를 선택하고 자료 생성을 누르세요."></textarea>
 <p id="message" role="status"></p></section></main>
+<section class="panel stats-editor" id="fullAccountPanel">
+<h2>전체 계정 AI 전달용 자료</h2>
+<p>파티·광추·유물·육성·가챠 추천을 외부 AI에 요청할 때 사용합니다.
+보유 캐릭터·광추·유물 전체를 장착 여부와 관계없이 내보내며, 위의 캐릭터별 후보 필터 및 개수 제한을 적용하지 않습니다.</p>
+<p id="fullAccountSummary">전체 계정 데이터 불러오기 전</p>
+<div class="actions">
+<button id="fullSaveSingle" type="button">전체 계정 JSON 1개 저장</button>
+<button id="fullSaveFolder" class="secondary" type="button">전체 계정 분할 폴더 저장</button>
+</div>
+<p id="fullExportStatus" role="status">저장할 때 스캔 원본과 출력 개수가 일치하는지 확인합니다.</p>
+<details id="analysisPreferencesDetails">
+<summary>개인 분석 조건 (선택)</summary>
+<p>예: 특정 캐릭터를 사용하지 않음, 파티 우선순위, 광추 재배치 허용 여부, 성옥 사용 제한.
+입력한 내용은 계정별 로컬 파일에 보관하고 전체 계정 AI 자료에 포함합니다.</p>
+<label for="analysisPreferences">AI가 고려할 개인 제약·선호</label>
+<textarea id="analysisPreferences" rows="4" maxlength="4000" placeholder="예: 여성 캐릭터만 사용. 기존 파티의 장비 재배치는 가능. 재화 소모는 최소화."></textarea>
+<div class="actions"><button id="analysisPreferencesSave" type="button" class="secondary">개인 분석 조건 저장</button></div>
+</details>
+</section>
 <section class="panel stats-editor" id="sheetEditor" hidden>
 <div class="stats-editor-head">
 <div>
@@ -434,6 +453,14 @@ async function refreshState() {
       : '적·보스 별도 자료 미준비';
   }
   all = state.characters ?? [];
+  el('fullAccountSummary').textContent = state.ready
+    ? '스캔 기준: 캐릭터 ' + all.length + '명 · 광추 ' +
+      state.lightCones + '개 · 유물 ' + state.relics +
+      '개 · 모든 장착/미장착 장비 포함 (후보 필터 미적용)'
+    : '게임 데이터 및 계정 JSON을 먼저 준비하세요.';
+  el('fullSaveSingle').disabled = !state.ready;
+  el('fullSaveFolder').disabled = !state.ready;
+  if (desktop) el('analysisPreferences').value = state.analysisPreferences?.text ?? '';
   sheetRecords = state.characterStats ?? {};
   sheetFields = state.characterStatFields ?? {};
   sheetComparisons = state.characterStatComparisons ?? {};
@@ -462,6 +489,57 @@ async function refreshState() {
   renderWarpOptions(true);
 }
 await refreshState();
+el('fullSaveFolder').hidden = !desktop;
+el('analysisPreferencesDetails').hidden = !desktop;
+el('fullSaveSingle').addEventListener('click', async () => {
+  el('fullSaveSingle').disabled = true;
+  el('fullExportStatus').textContent = '전체 계정 자료를 확인하고 저장합니다…';
+  try {
+    if (desktop) {
+      const saved = await desktop.exportFullAccount('single');
+      el('fullExportStatus').textContent = saved
+        ? '전체 계정 JSON 저장 완료: 캐릭터 ' + saved.counts.exported.characters +
+          '명 · 광추 ' + saved.counts.exported.lightCones +
+          '개 · 유물 ' + saved.counts.exported.relics + '개'
+        : '저장을 취소했습니다.';
+    } else {
+      const response = await fetch('/api/full-account', { method: 'POST' });
+      if (!response.ok) throw new Error(await response.text());
+      const blob = await response.blob();
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.href = url; link.download = 'hsr-account-complete.json'; link.click();
+      URL.revokeObjectURL(url);
+      el('fullExportStatus').textContent = '전체 계정 JSON 다운로드를 요청했습니다.';
+    }
+  } catch (error) {
+    el('fullExportStatus').textContent = '전체 계정 저장 실패: ' + error.message;
+  } finally { el('fullSaveSingle').disabled = false; }
+});
+if (desktop) {
+  el('fullSaveFolder').addEventListener('click', async () => {
+    el('fullSaveFolder').disabled = true;
+    el('fullExportStatus').textContent = '전체 인벤토리를 분할 저장합니다…';
+    try {
+      const saved = await desktop.exportFullAccount('folder');
+      el('fullExportStatus').textContent = saved
+        ? '분할 저장 완료: ' + saved.fileCount + '개 파일 · 유물 ' +
+          saved.counts.exported.relics + '개 전체 포함 · ' + saved.path
+        : '저장을 취소했습니다.';
+    } catch (error) {
+      el('fullExportStatus').textContent = '분할 저장 실패: ' + error.message;
+    } finally { el('fullSaveFolder').disabled = false; }
+  });
+  el('analysisPreferencesSave').addEventListener('click', async () => {
+    el('analysisPreferencesSave').disabled = true;
+    try {
+      const updated = await desktop.saveAnalysisPreferences(el('analysisPreferences').value);
+      el('fullExportStatus').textContent = '개인 분석 조건 저장 완료: ' + updated.updatedAt;
+    } catch (error) {
+      el('fullExportStatus').textContent = '개인 분석 조건 저장 실패: ' + error.message;
+    } finally { el('analysisPreferencesSave').disabled = false; }
+  });
+}
 el('filter').addEventListener('input', render);
 el('candidateMode').addEventListener('change', () => {
   updateFilterVisibility();
