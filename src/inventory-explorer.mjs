@@ -148,11 +148,17 @@ export function selectInventoryForExport(report, request) {
   const unknown = [...selected].filter(k => !available.has(k));
   if (unknown.length) throw new Error('현재 계정에 없는 항목 키가 있습니다: ' + unknown[0]);
   if (!selected.size) throw new Error('출력할 항목을 한 개 이상 선택하세요.');
-  const selectedRows = catalog.rows.filter(row => selected.has(row.key));
-  const selectedCharacters = report.characters.filter(x => selected.has(x.key));
-  const selectedCones = report.lightCones.filter(x => selected.has(x.key));
-  const selectedRelics = report.relics.filter(x => selected.has(x.key));
-  const selectedMaterials = (report.resources.materials ?? []).filter(x => selected.has(x.key));
+  const sortBy = request.sortBy ?? 'name';
+  const descending = request.descending === true;
+  const sorted = filterInventoryCatalog(catalog.rows, { sortBy, descending });
+  const order = new Map(sorted.map((row, i) => [row.key, i]));
+  const choose = items => items.filter(x => selected.has(x.key))
+    .sort((a, b) => order.get(a.key) - order.get(b.key));
+  const selectedRows = sorted.filter(row => selected.has(row.key));
+  const selectedCharacters = choose(report.characters);
+  const selectedCones = choose(report.lightCones);
+  const selectedRelics = choose(report.relics);
+  const selectedMaterials = choose(report.resources.materials ?? []);
   const selectedCharIds = new Set(selectedCharacters.map(c => String(c.id)));
   const selectedConeIds = new Set(selectedCones.map(c => String(c.id)));
   const selectedSetIds = new Set(selectedRelics.map(r => String(r.setId)));
@@ -182,6 +188,7 @@ export function selectInventoryForExport(report, request) {
     schemaVersion: 1, metadata: report.metadata,
     selection: {
       mode: 'explicit-keys', counts,
+      sortBy, descending,
       availableCounts: catalog.counts,
       note: '선택 출력입니다. 미선택 항목은 미보유를 의미하지 않습니다. 장착 관계는 원래 계정 전체를 기준으로 표시합니다.',
     },
@@ -273,9 +280,18 @@ export function selectedInventoryToHtml(report) {
         '<td>' + escapeHtml(printable(v)) + '</td>').join('') + '</tr>').join('') +
       '</tbody></table></section>';
   }).join('');
-  const more = report.supplemental?.analysisPreferences ?
-    '<section><h2>개인 분석 조건</h2><p>' +
-    escapeHtml(report.supplemental.analysisPreferences) + '</p></section>' : '';
+  const readableBlock = (title, payload) => payload == null || !Object.keys(payload).length ? '' :
+    '<section><h2>' + escapeHtml(title) + '</h2><pre>' +
+    escapeHtml(JSON.stringify(payload, null, 2)) + '</pre></section>';
+  const more = [
+    report.resources?.gacha === undefined ? '' : readableBlock('보유 가챠 재화', report.resources.gacha),
+    readableBlock('수동 천장 기록', report.resources?.manualWarpPity),
+    report.supplemental?.analysisPreferences
+      ? '<section><h2>개인 분석 조건</h2><p>' +
+        escapeHtml(report.supplemental.analysisPreferences) + '</p></section>' : '',
+    readableBlock('선택 캐릭터의 보완 능력치', report.supplemental?.characterStats),
+    readableBlock('선택 장비의 원본 효과', report.reference),
+  ].join('');
   return '<!doctype html><html lang="ko"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<title>붕괴: 스타레일 — 계정 자료</title><style>' +
@@ -283,6 +299,7 @@ export function selectedInventoryToHtml(report) {
     'h1{font-size:26px}h2{font-size:18px;margin-top:32px}small,p{color:#546078}' +
     'table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:9px 11px;border-bottom:1px solid #d6dce5;vertical-align:top}' +
     'th{background:#eff3f9}tr{break-inside:avoid}section{break-inside:auto}' +
+    'pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f5fa;padding:14px;font-size:12px;border-radius:8px}' +
     '@media print{body{margin:0;padding:0}h2{break-after:avoid}}' +
     '</style></head><body><h1>붕괴: 스타레일 — 선택한 계정 자료</h1>' +
     '<p>게임 버전 ' + escapeHtml(report.metadata.gameVersion) +
