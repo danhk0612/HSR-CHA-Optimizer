@@ -6,6 +6,10 @@ import { buildAiReport, toAiMarkdown, resolveCharacterName } from './ai-report.m
 import { buildCandidateFilterOptions } from './relic-filters.mjs';
 import { exportPublicData } from './public-data-files.mjs';
 import { readLatestGameChangeReport } from './game-changes.mjs';
+import { readCharacterStats } from './character-stats.mjs';
+import { readWarpState } from './warp-state.mjs';
+import { readAnalysisPreferences } from './analysis-preferences.mjs';
+import { buildFullAccountReport } from './full-account-export.mjs';
 
 // Local-only preview UI. No game process, remote server, or AI API access.
 const data = await loadAccountData();
@@ -30,6 +34,27 @@ const server = createServer(async (req, res) => {
       unequippedRelics: data.scanner.relics?.filter(item => !item.location).length ?? null,
       candidateFilterOptions: buildCandidateFilterOptions(data.scanner, data.tables),
     })); return;
+  }
+  if (req.method === 'POST' && req.url === '/api/full-account') {
+    try {
+      const [characterStats, manualWarpState, analysis] = await Promise.all([
+        readCharacterStats(process.cwd(), data.scanner),
+        readWarpState(process.cwd(), data.scanner),
+        readAnalysisPreferences(process.cwd(), data.scanner),
+      ]);
+      const report = buildFullAccountReport(data.scanner, data.tables, data.manifest, {
+        importedAt: data.imported.importedAt,
+        characterStats, manualWarpState, analysisPreferences: analysis.text,
+      });
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="hsr-account-complete.json"',
+        'Cache-Control': 'no-store' });
+      res.end(JSON.stringify(report, null, 2) + '\n');
+    } catch (error) {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end(error.message);
+    }
+    return;
   }
   if (req.method === 'POST' && req.url === '/api/export') {
     try {
