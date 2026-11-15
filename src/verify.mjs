@@ -100,7 +100,7 @@ const selectedExport = selectInventoryForExport(complete, {
   includeReference: true, sortBy: 'level', descending: true,
 });
 assert.equal(selectedExport.characters.length, 1);
-assert.equal(selectedExport.relics.length, 1);
+assert.equal(selectedExport.relics.length + selectedExport.ornaments.length, 1);
 assert.equal(selectedExport.selection.counts[enhancedRelic.group], 1);
 assert.equal(selectedExport.selection.availableCounts.characters, scanner.characters.length);
 assert.ok(formatSelectedInventory(selectedExport, 'markdown').text.includes('미선택'));
