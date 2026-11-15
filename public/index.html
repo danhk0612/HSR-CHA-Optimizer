@@ -500,7 +500,10 @@ function renderGroupCheckboxes(){
 }
 function renderTabs(){
   const nav=$('tabBar');nav.replaceChildren();
-  const available=GROUPS.filter(g=>enabled.has(g.id));
+  const available=views.size?GROUPS.filter(g=>enabled.has(g.id)):[];
+  $('noActiveGroups').textContent=views.size
+    ? '표시할 자료 종류를 하나 이상 체크하세요.'
+    : '게임 자료와 계정 JSON을 준비하면 종류별 목록이 표시됩니다.';
   $('noActiveGroups').classList.toggle('hidden',available.length>0);
   if(!available.some(g=>g.id===activeGroup))activeGroup=available[0]?.id??null;
   for(const group of available){
