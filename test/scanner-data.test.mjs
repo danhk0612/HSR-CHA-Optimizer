@@ -73,3 +73,32 @@ test('missing scan categories remain visibly unscanned and not fabricated', () =
   assert.deepEqual(report.unmatchedGameIds.characters, ['9999']);
   assert.equal(report.coverage.personalSheetStats, false);
 });
+
+test('Reliquary Archiver v4 format includes gacha and materials without exporting UID', () => {
+  const archive = {
+    ...scanner,
+    source: 'reliquary_archiver',
+    build: '0.19.0',
+    gacha: { stellar_jade: 1800, oneric_shards: 90 },
+    materials: [{ id: '111011', name: '테스트 재료', count: 12 }],
+  };
+  assert.equal(validateScannerData(archive), archive);
+  const result = buildAccountReport(archive, tables, manifest, {
+    importedAt: '2026-11-15T01:00:00.000Z',
+  });
+  assert.equal(result.metadata.accountSource, 'reliquary_archiver');
+  assert.equal(result.coverage.gachaFundsCollected, true);
+  assert.equal(result.coverage.materialsCollected, true);
+  assert.equal(result.coverage.warpPityCollected, false);
+  assert.equal(result.gacha.stellar_jade, 1800);
+  assert.equal(result.materials[0].count, 12);
+  assert.ok(!JSON.stringify(result).includes('987654321'));
+});
+
+test('OCR scanner without funds distinguishes unavailable values from zero', () => {
+  const report = buildAccountReport(scanner, tables, manifest);
+  assert.equal(report.gacha, null);
+  assert.equal(report.materials, null);
+  assert.equal(report.coverage.gachaFundsCollected, false);
+  assert.equal(report.coverage.materialsCollected, false);
+});
