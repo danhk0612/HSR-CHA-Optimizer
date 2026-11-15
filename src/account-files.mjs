@@ -4,7 +4,8 @@ import { join, resolve } from 'node:path';
 const REQUIRED_TABLES = [
   'characters', 'character_ranks', 'character_skills',
   'character_skill_trees', 'light_cones', 'light_cone_ranks',
-  'relic_sets', 'items', 'paths', 'elements',
+  'relic_sets', 'relics', 'relic_main_affixes', 'properties',
+  'items', 'paths', 'elements',
 ];
 
 async function json(path) {
