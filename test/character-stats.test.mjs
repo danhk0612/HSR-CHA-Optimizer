@@ -28,9 +28,9 @@ const response = (ids = ['1308']) => ({
 test('sheet storage begins empty and manual input accepts partial fields including zero', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hsr-sheet-'));
   try {
-    assert.deepEqual((await readCharacterStats(root)).characters, {});
+    assert.deepEqual((await readCharacterStats(root, scanner)).characters, {});
     await saveManualCharacterStats(root, scanner, '1308', { hp: 4300, spd: 153.2, crit_rate: 0 });
-    const store = await readCharacterStats(root);
+    const store = await readCharacterStats(root, scanner);
     assert.equal(store.characters['1308'].manual.values.hp, 4300);
     assert.equal(store.characters['1308'].manual.values.spd, 153.2);
     assert.equal(store.characters['1308'].manual.values.crit_rate, 0);
@@ -59,7 +59,7 @@ test('offline Mihomo parsed import checks UID and copies only whitelisted stat f
     await assert.rejects(() => importMihomoParsed(root, scanner, wrong), /UID/);
     const result = await importMihomoParsed(root, scanner, response(['1308', '8002']), '2026-11-15T10:00:00.000Z');
     assert.equal(result.characters, 2);
-    const store = await readCharacterStats(root);
+    const store = await readCharacterStats(root, scanner);
     assert.equal(store.characters['1308'].manual.values.hp, 4500);
     assert.equal(store.characters['1308'].showcase.attributes[0].value, 2000);
     assert.equal(store.characters['1308'].showcase.additions[0].value, 2300);
@@ -83,14 +83,27 @@ test('showcase refresh replaces old showcase entries without erasing manual obse
     const smaller = response(['1308']);
     smaller.characters[0].additions = [];
     await importMihomoParsed(root, scanner, smaller);
-    const data = await readCharacterStats(root);
+    const data = await readCharacterStats(root, scanner);
     assert.equal(data.characters['8002'].manual.values.spd, 140);
     assert.equal(data.characters['8002'].showcase, undefined);
     assert.equal(data.characters['1308'].showcase.additions.length, 0);
     await clearManualCharacterStats(root, scanner, '8002');
-    const after = await readCharacterStats(root);
+    const after = await readCharacterStats(root, scanner);
     assert.equal(after.characters['8002'], undefined);
     assert.equal(after.characters['1308'].showcase.attributes.length, 2);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+
+test('supplemental sheets from another account stay isolated without exposing raw UID in filenames', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hsr-account-bound-'));
+  try {
+    await saveManualCharacterStats(root, scanner, '1308', { spd: 133 });
+    const second = { ...scanner, metadata: { uid: 200000111 } };
+    assert.deepEqual((await readCharacterStats(root, second)).characters, {});
+    await saveManualCharacterStats(root, second, '1308', { spd: 155 });
+    assert.equal((await readCharacterStats(root, scanner)).characters['1308'].manual.values.spd, 133);
+    assert.equal((await readCharacterStats(root, second)).characters['1308'].manual.values.spd, 155);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
@@ -100,7 +113,7 @@ test('showcase import rejects unsupported/raw arrays, duplicates and unowned IDs
     await assert.rejects(() => importMihomoParsed(root, scanner, { detailInfo: {} }), /Parsed API/);
     await assert.rejects(() => importMihomoParsed(root, scanner, response(['1308', '1308'])), /중복/);
     await assert.rejects(() => importMihomoParsed(root, scanner, response(['1308', '9999'])), /등록되지 않은/);
-    const state = await readCharacterStats(root);
+    const state = await readCharacterStats(root, scanner);
     assert.deepEqual(state.characters, {});
   } finally { await rm(root, { recursive: true, force: true }); }
 });
