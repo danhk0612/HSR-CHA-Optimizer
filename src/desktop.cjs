@@ -27,7 +27,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
   app.whenReady().then(async () => {
     // Development reuses existing local CLI files; packaged EXE uses private user storage.
     const userRoot = smokeRoot ?? (app.isPackaged ? app.getPath('userData') : process.cwd());
-    const [{ getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, exportPublicInfo, saveWarpPool, clearWarpPool }, { importAccountArchive }, { syncGameData }] =
+    const [{ getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, exportPublicInfo, saveWarpPool, clearWarpPool, prepareEnemyInfo }, { importAccountArchive }, { syncGameData }] =
       await Promise.all([
         import('./desktop-service.mjs'),
         import('./account-import.mjs'),
@@ -54,9 +54,19 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
     win.webContents.on('will-navigate', (event) => event.preventDefault());
 
     let syncing = false;
+    let syncingEnemies = false;
     ipcMain.handle('hsr:state', () => getDesktopState(userRoot));
     ipcMain.handle('hsr:export', (_, args) => exportDesktopReport(userRoot, args));
     ipcMain.handle('hsr:public-export', (_, request) => exportPublicInfo(userRoot, request));
+    ipcMain.handle('hsr:enemy-sync', async (event) => {
+      if (syncingEnemies) throw new Error('적·보스 자료 준비가 이미 진행 중입니다.');
+      syncingEnemies = true;
+      try {
+        return await prepareEnemyInfo(userRoot, progress => {
+          if (!event.sender.isDestroyed()) event.sender.send('hsr:enemy-progress', progress);
+        });
+      } finally { syncingEnemies = false; }
+    });
     ipcMain.handle('hsr:warp-save', (_, { name, input }) => saveWarpPool(userRoot, name, input));
     ipcMain.handle('hsr:warp-clear', (_, name) => clearWarpPool(userRoot, name));
     ipcMain.handle('hsr:manual-save', (_, { id, values }) => saveManualSheet(userRoot, id, values));
@@ -118,6 +128,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
               .every(id => !!document.getElementById(id)),
             manualSheetControls: ['manualStatCharacter','manualSheetSave','manualSheetClear',
               'importShowcase'].every(id => !!document.getElementById(id)),
+            enemyControls: ['prepareEnemies', 'enemyDataStatus'].every(id => !!document.getElementById(id)),
             publicControls: ['publicType','publicSearch','publicGenerate','publicResult']
               .every(id => !!document.getElementById(id)),
             syncHistoryControls: ['syncHistory','syncHistorySummary','syncHistoryRows']
