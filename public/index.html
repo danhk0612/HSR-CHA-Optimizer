@@ -32,7 +32,8 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 .sync-history{margin-top:14px}.sync-history summary{cursor:pointer;font-weight:600;font-size:13px}
 .sync-history-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}
 .sync-history-table th,.sync-history-table td{padding:8px;border-bottom:1px solid #2a3852;text-align:left}
-.sync-history-table td:not(:first-child),.sync-history-table th:not(:first-child){text-align:right}
+.sync-history-table td:not(:first-child):not(:last-child),.sync-history-table th:not(:first-child):not(:last-child){text-align:right}
+.sync-history-table td:last-child{min-width:180px;max-width:420px;overflow-wrap:anywhere}
 .sync-history-table-wrap{overflow-x:auto}
 .public-editor{margin-top:20px}#publicResult{height:260px}.stats-editor{margin-top:20px}.stats-editor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .stats-editor-head p{margin:4px 0 10px}.stats-fields{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin:14px 0}
@@ -56,7 +57,7 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 <p id="syncHistoryInfo"></p>
 <div class="sync-history-table-wrap">
 <table class="sync-history-table">
-<thead><tr><th>게임 데이터</th><th>기존</th><th>현재</th><th>추가</th><th>삭제</th><th>변경</th></tr></thead>
+<thead><tr><th>게임 데이터</th><th>기존</th><th>현재</th><th>추가</th><th>삭제</th><th>변경</th><th>ID 예시</th></tr></thead>
 <tbody id="syncHistoryRows"></tbody>
 </table>
 </div>
@@ -260,6 +261,11 @@ function renderGameChanges(report) {
       item.previousCount ?? '-',
       item.currentCount,
       item.added, item.removed, item.modified,
+      [
+        item.sampleIds?.added?.length ? '추가: ' + item.sampleIds.added.join(', ') : '',
+        item.sampleIds?.removed?.length ? '삭제: ' + item.sampleIds.removed.join(', ') : '',
+        item.sampleIds?.modified?.length ? '수정: ' + item.sampleIds.modified.join(', ') : '',
+      ].filter(Boolean).join(' / ') || '-',
     ]) {
       const td = document.createElement('td');
       td.textContent = String(value);
@@ -270,7 +276,7 @@ function renderGameChanges(report) {
   if (!body.childElementCount) {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
-    td.colSpan = 6;
+    td.colSpan = 7;
     td.textContent = initial ? '비교 기준이 저장됐습니다.' : '변경된 테이블이 없습니다.';
     tr.append(td);
     body.append(tr);
