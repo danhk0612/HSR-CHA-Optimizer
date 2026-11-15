@@ -43,6 +43,35 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 @media(max-width:560px){.stats-fields{grid-template-columns:repeat(2,minmax(120px,1fr))}}
 @media(max-width:650px){.candidate-filter-grid{grid-template-columns:1fr}}
 @media(max-width:850px){main{grid-template-columns:1fr}.shell{padding:15px}header{align-items:start;flex-direction:column}}
+.inventory-explorer{margin-top:20px}
+.inventory-head{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.inventory-layout{display:grid;grid-template-columns:minmax(245px,315px) minmax(0,1fr);gap:18px}
+.inventory-filters{border:1px solid #35445e;background:#101b2e;border-radius:10px;padding:12px}
+.inventory-filters>label:first-child{margin-top:0}
+.inventory-filters input[type=number]{width:100%}
+.inventory-selectors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.inventory-selector{border:1px solid #384660;border-radius:9px;min-width:0}
+.inventory-selector summary{padding:9px;cursor:pointer;font-size:12px}
+.inventory-option-list{padding:8px;max-height:185px;overflow-y:auto;border-top:1px solid #35445e}
+.inventory-option-list label{display:flex;gap:7px;margin:0;padding:4px 0;font-size:12px}
+.inventory-option-list input{width:auto;flex:none}
+.inventory-quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.inventory-list{width:100%;border-collapse:collapse;font-size:12px}
+.inventory-list th,.inventory-list td{padding:9px;border-bottom:1px solid #303f57;text-align:left;vertical-align:top}
+.inventory-list td small{color:#9fadc6}
+.inventory-list .inventory-item-name{font-weight:600;word-break:break-word}
+.inventory-list details{max-width:480px}.inventory-list summary{cursor:pointer}
+.inventory-list pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;max-width:400px}
+.inventory-results{overflow:auto;max-height:680px;border:1px solid #33435f;border-radius:9px}
+.inventory-status{font-size:12px;color:#a7c6ff;white-space:pre-wrap}
+.inventory-result-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+.inventory-result-tools>label{margin:4px 0;min-width:150px;flex:1}
+.inventory-options-row{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.inventory-options-row label{margin:0;display:flex;gap:6px}
+.inventory-output-preview{height:180px}
+.legacy-options{margin-top:20px;border:1px solid #33435f;border-radius:12px;padding:15px;background:#121b2c}
+.legacy-options>summary{font-weight:600;cursor:pointer;padding:4px 0}
+@media(max-width:930px){.inventory-layout{grid-template-columns:1fr}}
 </style></head>
 <body><div class="shell"><header><div><h1>HSR-CHA-Optimizer</h1>
 <p>보유 데이터와 한국어 게임 정보를 선택해 AI 전달용 자료로 정리합니다. 자동 추천·AI API 호출은 하지 않습니다.</p></div>
@@ -64,6 +93,101 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 <p>각 항목의 내용은 별도 로컬 JSON 이력에 저장됩니다. 비교 결과에는 개인 계정 정보가 포함되지 않습니다.</p>
 </details>
 </section>
+<section class="panel inventory-explorer" id="inventoryExplorer">
+<div class="inventory-head"><div><h2>계정 데이터 탐색·선택·출력</h2>
+<p>보유 자료를 검색하고 조건별로 필터한 뒤 필요한 항목만 선택해 AI용 JSON/Markdown 또는 읽기 좋은 HTML 문서로 출력합니다. 성별은 원본에 없어 제공하지 않습니다.</p></div>
+<small id="inventorySummary">계정 자료 준비 중…</small></div>
+<div class="inventory-layout">
+<div class="inventory-filters">
+<label for="inventoryGroup">자료 종류</label>
+<select id="inventoryGroup">
+<option value="all">전체 자료</option><option value="characters">캐릭터</option>
+<option value="lightCones">광추</option><option value="relics">유물 (터널)</option>
+<option value="ornaments">차원 장신구</option><option value="materials">재료·티켓</option>
+</select>
+<label for="inventorySearch">이름·ID·세트·장착 캐릭터 검색</label>
+<input id="inventorySearch" type="text" placeholder="이름, ID, 세트 검색">
+<div class="inventory-selectors">
+<details class="inventory-selector"><summary>성급 <span id="invRarityCount"></span></summary><div id="invRarities" class="inventory-option-list"></div></details>
+<details class="inventory-selector"><summary>속성 <span id="invElementCount"></span></summary><div id="invElements" class="inventory-option-list"></div></details>
+<details class="inventory-selector"><summary>운명의 길 <span id="invPathCount"></span></summary><div id="invPaths" class="inventory-option-list"></div></details>
+<details class="inventory-selector"><summary>유물·장신구 세트 <span id="invSetCount"></span></summary><div id="invSets" class="inventory-option-list"></div></details>
+<details class="inventory-selector"><summary>장비 부위 <span id="invSlotCount"></span></summary><div id="invSlots" class="inventory-option-list"></div></details>
+<details class="inventory-selector"><summary>주옵션 <span id="invMainCount"></span></summary><div id="invMainstats" class="inventory-option-list"></div></details>
+<details class="inventory-selector"><summary>부옵션 (모두 포함) <span id="invSubCount"></span></summary><div id="invSubstats" class="inventory-option-list"></div></details>
+</div>
+<div class="inventory-quick">
+<div><label for="invMinLevel">최소 레벨·강화</label><input id="invMinLevel" type="number" min="0" placeholder="제한 없음"></div>
+<div><label for="invMaxLevel">최대 레벨·강화</label><input id="invMaxLevel" type="number" min="0" placeholder="제한 없음"></div>
+<div><label for="invMinEidolon">최소 성혼</label><input id="invMinEidolon" type="number" min="0" max="6" placeholder="제한 없음"></div>
+<div><label for="invMinSuper">최소 광추 중첩</label><input id="invMinSuper" type="number" min="1" max="5" placeholder="제한 없음"></div>
+<div><label for="invMinCount">재료 최소 수량</label><input id="invMinCount" type="number" min="0" placeholder="제한 없음"></div>
+<div><label for="invEquipped">장착 상태</label><select id="invEquipped">
+<option value="all">전체</option><option value="owned">장착됨</option>
+<option value="unequipped">미장착</option><option value="unknown-character-id">장착자 불명</option></select></div>
+<div><label for="invLocked">장비 잠금</label><select id="invLocked"><option value="all">전체</option><option value="true">잠금</option><option value="false">잠금 해제</option></select></div>
+<div><label for="invDiscard">유물 폐기 표시</label><select id="invDiscard"><option value="all">전체</option><option value="true">표시됨</option><option value="false">표시 안 됨</option></select></div>
+</div>
+<label for="invStatKey">부옵션 능력치별 조건 (미리보기 부옵션 제외)</label>
+<select id="invStatKey"><option value="">제한 없음</option></select>
+<div class="inventory-quick">
+<div><label for="invStatValue">능력치 최소값</label><input id="invStatValue" type="number" step="any" placeholder="제한 없음"></div>
+<div><label for="invStatCount">최소 강화 횟수</label><input id="invStatCount" type="number" min="0" placeholder="제한 없음"></div>
+</div>
+<div class="actions"><button class="secondary" id="invReset" type="button">필터 전체 초기화</button></div>
+<p>같은 필터에서 다중 선택은 OR, 필터 종류 사이에는 AND입니다. 부옵션 다중 선택은 모두 포함 조건입니다. 현재 획득한 부옵션만 검사합니다.</p>
+</div>
+<div>
+<div class="inventory-result-tools">
+<label for="invSort">정렬<select id="invSort">
+<option value="name">이름</option><option value="rarity">성급</option>
+<option value="level">레벨·강화</option><option value="eidolon">성혼</option>
+<option value="superimposition">중첩</option><option value="setName">세트</option>
+<option value="mainstat">주옵션</option><option value="equipped">장착 상태</option>
+<option value="count">재료 수량</option>
+</select></label>
+<label for="invDirection">방향<select id="invDirection"><option value="asc">오름차순</option><option value="desc">내림차순</option></select></label>
+</div>
+<p id="inventoryCount">검색 결과를 불러오는 중…</p>
+<div class="actions">
+<button id="inventorySelectFiltered" type="button">검색 결과 모두 선택</button>
+<button id="inventoryClearFiltered" class="secondary" type="button">검색 결과 선택 해제</button>
+<button id="inventorySelectAll" class="secondary" type="button">계정 전체 선택</button>
+<button id="inventoryClearAll" class="secondary" type="button">전체 선택 해제</button>
+</div>
+<div class="inventory-results"><table class="inventory-list">
+<thead><tr><th>선택</th><th>이름·종류</th><th>레벨·성급</th><th>장착·옵션</th></tr></thead>
+<tbody id="inventoryRows"></tbody></table></div>
+<div class="actions">
+<button class="secondary" id="invPrev" type="button">이전</button>
+<span id="invPage">1 / 1</span>
+<button class="secondary" id="invNext" type="button">다음</button>
+</div>
+<details open class="inventory-selector" style="padding:12px">
+<summary>선택 항목 출력</summary>
+<div class="inventory-result-tools">
+<label for="inventoryOutputFormat">파일 형식<select id="inventoryOutputFormat">
+<option value="json">AI용 JSON (원본 상세 포함)</option>
+<option value="markdown">Markdown (읽기용 + 원본 JSON)</option>
+<option value="html">HTML 문서 (사람이 읽기 좋게)</option>
+</select></label>
+</div>
+<div class="inventory-options-row">
+<label><input type="checkbox" id="invIncludeGacha"> 가챠 재화</label>
+<label><input type="checkbox" id="invIncludeWarp"> 수동 천장 기록</label>
+<label><input type="checkbox" id="invIncludeSupplemental" checked> 개인 조건·보완 능력치</label>
+<label><input type="checkbox" id="invIncludeReference" checked> 선택 장비의 효과 원본</label>
+</div>
+<p>장비 장착 관계는 현재 계정 기준이며, 선택하지 않은 항목은 미보유로 취급하지 않습니다.</p>
+<div class="actions">
+<button id="inventoryPreview" class="secondary" type="button">출력 미리보기</button>
+<button id="inventoryExport" type="button">선택 항목 파일 저장</button>
+</div>
+<textarea id="inventoryPreviewText" class="inventory-output-preview" readonly placeholder="미리보기는 최대 20,000자만 표시합니다. 파일 저장은 전체 내용을 출력합니다."></textarea>
+<p class="inventory-status" id="inventoryExportStatus" role="status">자료를 선택하세요.</p>
+</details>
+</div></div></section>
+<details class="legacy-options" id="legacyOptions"><summary>기존 상세 기능 · 수동 능력치 · 워프 기록 · 게임 자료 검색 (고급)</summary>
 <main><section class="panel"><h2>보유 캐릭터</h2>
 <input id="filter" type="text" placeholder="캐릭터 이름 검색" autocomplete="off" aria-label="캐릭터 검색">
 <div class="roster" id="roster"></div></section>
@@ -182,6 +306,7 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 <textarea id="publicResult" readonly placeholder="자료 종류와 검색어를 선택하세요."></textarea>
 <p id="publicMessage" role="status"></p>
 </section>
+</details>
 </div>
 <script type="module">
 const el = id => document.getElementById(id);
