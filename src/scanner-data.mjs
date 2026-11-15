@@ -1,20 +1,27 @@
 import { buildCharacterReport } from './build-character-report.mjs';
 import { buildLightConeReport, buildRelicSetReport } from './equipment-report.mjs';
 
-// HSR-Scanner README currently documents export version 4.
+// Both importers use the Fribbels/Kel-Z format version 4.
+// The original source name is preserved to avoid confusing personal records.
+const SUPPORTED_SOURCES = new Set(['HSR-Scanner', 'reliquary_archiver']);
 export function validateScannerData(data) {
   if (!data || typeof data !== 'object' || Array.isArray(data)
-      || data.source !== 'HSR-Scanner' || data.version !== 4) {
-    throw new Error('HSR-Scanner JSON version 4 형식이 아닙니다.');
+      || !SUPPORTED_SOURCES.has(data.source) || data.version !== 4) {
+    throw new Error('지원하지 않는 계정 데이터 형식입니다 (HSR-Scanner 또는 reliquary_archiver, version 4 필요).');
   }
   const keys = ['characters', 'light_cones', 'relics'];
   if (!keys.some((key) => Array.isArray(data[key]))) {
     throw new Error('스캔한 캐릭터, 광추 또는 유물 목록이 없습니다.');
   }
-  for (const key of keys) {
+  for (const key of [...keys, 'materials']) {
     if (data[key] !== undefined && !Array.isArray(data[key])) {
       throw new Error(key + ' 항목은 배열이어야 합니다.');
     }
+  }
+  if (data.gacha !== undefined && (
+    !data.gacha || typeof data.gacha !== 'object' || Array.isArray(data.gacha)
+  )) {
+    throw new Error('gacha 항목은 객체여야 합니다.');
   }
   return data;
 }
@@ -73,7 +80,7 @@ export function buildAccountReport(scanner, tables, manifest, options = {}) {
       gameSource: manifest.source,
       gameVersion: manifest.version,
       gameSyncedAt: manifest.syncedAt,
-      accountSource: 'HSR-Scanner',
+      accountSource: scanner.source,
       accountFormatVersion: scanner.version,
       scannerBuild: scanner.build ?? null,
       importedAt: options.importedAt ?? null,
@@ -85,11 +92,17 @@ export function buildAccountReport(scanner, tables, manifest, options = {}) {
       relicsScanned: Array.isArray(scanner.relics),
       personalSheetStats: false,
       resourcesAndWarpPity: false,
+      gachaFundsCollected: scanner.gacha !== undefined,
+      materialsCollected: Array.isArray(scanner.materials),
       note: '스캐너 설정의 제외 조건·인식 오류에 따라 결과가 전체 보유량보다 적을 수 있습니다.',
     },
     characters: ownedCharacters,
     lightCones: ownedLightCones,
     relics: ownedRelics,
+    // Reliquary Archiver optionally provides stellar jade/oneric shards
+    // and material counts. Warp pity is not present in this snapshot.
+    gacha: scanner.gacha ?? null,
+    materials: scanner.materials ?? null,
     reference,
     unmatchedGameIds: {
       characters: ownedCharacters.filter((entry) => !entry.game).map((entry) => String(entry.owned.id)),
