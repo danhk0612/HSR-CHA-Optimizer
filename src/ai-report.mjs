@@ -1,3 +1,5 @@
+import { createRelicIndex, enrichRelic } from './relic-stats.mjs';
+
 // Read-only AI hand-off: use original account values and Korean game definitions.
 // Do not simulate in-game final stats or score relics.
 const SKILL_TYPES = { basic: 'Normal', skill: 'BPSkill', ult: 'Ultra', talent: 'Talent' };
@@ -13,7 +15,7 @@ export function resolveCharacterName(owned, tables) {
   return variant ? `개척자 (${variant})` : `개척자 (${owned.id})`;
 }
 
-function compactRelic(item, tables) {
+function compactRelic(item, tables, relicIndex) {
   return {
     inventoryId: item._uid ?? null,
     setId: String(item.set_id),
@@ -22,9 +24,7 @@ function compactRelic(item, tables) {
     rarity: item.rarity,
     level: item.level,
     mainstat: item.mainstat,
-    substats: item.substats ?? [],
-    ...(item.preview_substats?.length ? { previewSubstats: item.preview_substats } : {}),
-    ...(item.reroll_substats?.length ? { rerollSubstats: item.reroll_substats } : {}),
+    ...enrichRelic(item, tables, relicIndex),
     equippedBy: item.location || null,
   };
 }
@@ -65,7 +65,7 @@ function compactSkills(owned, ref, tables) {
   return results;
 }
 
-function compactCharacter(owned, tables, lightCones, relics) {
+function compactCharacter(owned, tables, lightCones, relics, relicIndex) {
   const ref = tables.characters?.[String(owned.id)];
   const base = {
     id: String(owned.id),
@@ -78,7 +78,7 @@ function compactCharacter(owned, tables, lightCones, relics) {
     traces: owned.traces ?? {},
     ...(owned.memosprite ? { memosprite: owned.memosprite } : {}),
     lightCones: lightCones.map(x => compactCone(x, tables)),
-    relics: relics.map(x => compactRelic(x, tables)),
+    relics: relics.map(x => compactRelic(x, tables, relicIndex)),
   };
   if (!ref) return { ...base, gameDataAvailable: false };
   const unlocked = (ref.ranks ?? [])
@@ -118,7 +118,7 @@ function compactCharacter(owned, tables, lightCones, relics) {
   return { ...base, gameDataAvailable: true, unlockedEidolons: unlocked, majorTraceDefinitions: majorTraces, relicSetBonuses: setBonuses };
 }
 
-function selectCandidates(scanner, tables, wanted, options) {
+function selectCandidates(scanner, tables, wanted, options, relicIndex) {
   const mode = options.candidateMode ?? 'none';
   if (!['none', 'equipped-sets', 'all'].includes(mode)) throw new Error('지원하지 않는 후보 범위: ' + mode);
   if (mode === 'none') return { mode, matching: 0, included: 0, relics: [] };
@@ -140,7 +140,7 @@ function selectCandidates(scanner, tables, wanted, options) {
   return {
     mode, setIds: [...setIds], matching: filtered.length,
     included: Math.min(limit, filtered.length),
-    relics: filtered.slice(0, limit).map(item => compactRelic(item, tables)),
+    relics: filtered.slice(0, limit).map(item => compactRelic(item, tables, relicIndex)),
   };
 }
 
@@ -153,13 +153,14 @@ export function buildAiReport(scanner, tables, manifest, options = {}) {
     if (!item) throw new Error('보유 캐릭터 목록에 없는 ID: ' + id);
     return item;
   });
+  const relicIndex = createRelicIndex(tables.relics);
   const selectedCharacters = wanted.map(owned => {
     const id = String(owned.id);
     const cones = (scanner.light_cones ?? []).filter(item => String(item.location) === id);
     const relics = (scanner.relics ?? []).filter(item => String(item.location) === id);
-    return compactCharacter(owned, tables, cones, relics);
+    return compactCharacter(owned, tables, cones, relics, relicIndex);
   });
-  const candidates = selectCandidates(scanner, tables, wanted, options);
+  const candidates = selectCandidates(scanner, tables, wanted, options, relicIndex);
   const resources = options.includeResources ? {
     gacha: scanner.gacha ?? null,
     materials: (scanner.materials ?? []).map(item => ({
@@ -182,7 +183,8 @@ export function buildAiReport(scanner, tables, manifest, options = {}) {
     limitations: {
       characterSheetStatsCollected: false,
       warpPityCollected: false,
-      note: '스캔 장비의 실제 수치만 수록하며, 최종 캐릭터 능력치는 임의로 계산하지 않습니다. 스킬 설명의 #1[i] 등 표기는 원문이며 계수 배열은 별도로 제공됩니다.',
+      relicMainStatNumbers: 'StarRailRes 유물 주옵션 기본값+강화 계수로 산출. 원본 수집기가 직접 관측한 값이 아니며, 원본 매칭이 불가능하면 null.',
+      note: '캐릭터의 최종 능력치는 임의로 계산하지 않습니다. 유물 부옵션 원본 value는 유지하고 한국어 표시값을 별도 제공합니다. 스킬 설명의 #1[i] 등 표기는 원문이며 계수 배열은 별도로 제공됩니다.',
     },
     characters: selectedCharacters,
     candidates: candidates.mode === 'none' ? undefined : candidates,
