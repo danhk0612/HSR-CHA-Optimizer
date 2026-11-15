@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, clipboard } = require('electron');
 const { join } = require('node:path');
-const { writeFile } = require('node:fs/promises');
+const { writeFile, mkdtemp } = require('node:fs/promises');
 const { mkdtempSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 
@@ -27,7 +27,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
   app.whenReady().then(async () => {
     // Development reuses existing local CLI files; packaged EXE uses private user storage.
     const userRoot = smokeRoot ?? (app.isPackaged ? app.getPath('userData') : process.cwd());
-    const [{ getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, exportPublicInfo, saveWarpPool, clearWarpPool, prepareEnemyInfo }, { importAccountArchive }, { syncGameData }] =
+    const [{ getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, exportPublicInfo, saveWarpPool, clearWarpPool, prepareEnemyInfo, buildFullAccountForDesktop, buildFullAccountFolder, saveAccountAnalysisPreferences }, { importAccountArchive }, { syncGameData }] =
       await Promise.all([
         import('./desktop-service.mjs'),
         import('./account-import.mjs'),
@@ -57,6 +57,39 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
     let syncingEnemies = false;
     ipcMain.handle('hsr:state', () => getDesktopState(userRoot));
     ipcMain.handle('hsr:export', (_, args) => exportDesktopReport(userRoot, args));
+    ipcMain.handle('hsr:analysis-preferences-save', (_, text) =>
+      saveAccountAnalysisPreferences(userRoot, text));
+    ipcMain.handle('hsr:full-account-export', async (_, request) => {
+      const mode = request?.mode;
+      if (mode !== 'single' && mode !== 'folder')
+        throw new Error('지원하지 않는 전체 계정 저장 형식입니다.');
+      if (mode === 'single') {
+        const selected = await dialog.showSaveDialog(win, {
+          title: 'AI 전달용 전체 계정 JSON 저장',
+          defaultPath: join(app.getPath('documents'), 'hsr-account-complete.json'),
+          filters: [{ name: 'JSON', extensions: ['json'] }],
+        });
+        if (selected.canceled || !selected.filePath) return null;
+        const report = await buildFullAccountForDesktop(userRoot);
+        await writeFile(selected.filePath, JSON.stringify(report, null, 2) + '\n', 'utf8');
+        return { kind: mode, path: selected.filePath, counts: report.counts, fileCount: 1 };
+      }
+      const selected = await dialog.showOpenDialog(win, {
+        title: '분할 계정 자료를 저장할 상위 폴더 선택',
+        properties: ['openDirectory', 'createDirectory'],
+      });
+      if (selected.canceled || !selected.filePaths.length) return null;
+      const bundle = await buildFullAccountFolder(userRoot);
+      const directory = await mkdtemp(join(selected.filePaths[0], 'HSR-AI-Account-'));
+      for (const [name, contents] of Object.entries(bundle.files)) {
+        await writeFile(join(directory, name), contents, 'utf8');
+      }
+      return {
+        kind: mode, path: directory,
+        counts: bundle.manifest.counts,
+        fileCount: Object.keys(bundle.files).length,
+      };
+    });
     ipcMain.handle('hsr:public-export', (_, request) => exportPublicInfo(userRoot, request));
     ipcMain.handle('hsr:enemy-sync', async (event) => {
       if (syncingEnemies) throw new Error('적·보스 자료 준비가 이미 진행 중입니다.');
@@ -134,6 +167,9 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
             syncHistoryControls: ['syncHistory','syncHistorySummary','syncHistoryRows']
               .every(id => !!document.getElementById(id)),
             exportButton: !!document.getElementById('generate'),
+            fullAccountControls: ['fullAccountPanel', 'fullSaveSingle', 'fullSaveFolder',
+              'analysisPreferences', 'analysisPreferencesSave', 'fullExportStatus']
+              .every(id => !!document.getElementById(id)),
             candidateFilterControls: ['candidateFilterArea', 'candidateSetChoices',
               'candidateSlotChoices', 'candidateMainChoices', 'candidateSubChoices']
               .every(id => !!document.getElementById(id)),
