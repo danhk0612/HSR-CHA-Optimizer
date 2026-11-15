@@ -20,6 +20,7 @@ function location(root, scanner) {
 }
 
 export async function readWarpState(root, scanner) {
+  if (!scanner?.metadata?.uid) return { schemaVersion: 1, pools: {} };
   const path = location(root, scanner);
   try {
     const data = JSON.parse(await readFile(path, 'utf8'));
