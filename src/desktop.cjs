@@ -27,7 +27,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
   app.whenReady().then(async () => {
     // Development reuses existing local CLI files; packaged EXE uses private user storage.
     const userRoot = smokeRoot ?? (app.isPackaged ? app.getPath('userData') : process.cwd());
-    const [{ getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, exportPublicInfo, saveWarpPool, clearWarpPool, prepareEnemyInfo, buildFullAccountForDesktop, buildFullAccountFolder, saveAccountAnalysisPreferences }, { importAccountArchive }, { syncGameData }] =
+    const [{ getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, exportPublicInfo, saveWarpPool, clearWarpPool, prepareEnemyInfo, buildFullAccountForDesktop, buildFullAccountFolder, saveAccountAnalysisPreferences, getInventoryCatalog, exportSelectedInventory }, { importAccountArchive }, { syncGameData }] =
       await Promise.all([
         import('./desktop-service.mjs'),
         import('./account-import.mjs'),
@@ -56,6 +56,21 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
     let syncing = false;
     let syncingEnemies = false;
     ipcMain.handle('hsr:state', () => getDesktopState(userRoot));
+    ipcMain.handle('hsr:inventory-catalog', () => getInventoryCatalog(userRoot));
+    ipcMain.handle('hsr:inventory-export', (_, request) => exportSelectedInventory(userRoot, request));
+    ipcMain.handle('hsr:inventory-save', async (_, request) => {
+      const extension = request?.format === 'html' ? 'html'
+        : request?.format === 'markdown' ? 'md' : 'json';
+      const chosen = await dialog.showSaveDialog(win, {
+        title: '선택한 계정 자료 저장',
+        defaultPath: join(app.getPath('documents'), 'hsr-account-selected.' + extension),
+        filters: [{ name: extension.toUpperCase(), extensions: [extension] }],
+      });
+      if (chosen.canceled || !chosen.filePath) return null;
+      const result = await exportSelectedInventory(userRoot, request);
+      await writeFile(chosen.filePath, result.text, 'utf8');
+      return { path: chosen.filePath, extension };
+    });
     ipcMain.handle('hsr:export', (_, args) => exportDesktopReport(userRoot, args));
     ipcMain.handle('hsr:analysis-preferences-save', (_, text) =>
       saveAccountAnalysisPreferences(userRoot, text));
@@ -167,6 +182,10 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
             syncHistoryControls: ['syncHistory','syncHistorySummary','syncHistoryRows']
               .every(id => !!document.getElementById(id)),
             exportButton: !!document.getElementById('generate'),
+            inventoryControls: ['inventoryExplorer','inventoryGroup','inventorySearch',
+              'inventoryRows','inventorySelectFiltered','inventoryClearFiltered',
+              'inventoryOutputFormat','inventoryExport','inventoryPreview']
+              .every(id => !!document.getElementById(id)),
             fullAccountControls: ['fullAccountPanel', 'fullSaveSingle', 'fullSaveFolder',
               'analysisPreferences', 'analysisPreferencesSave', 'fullExportStatus']
               .every(id => !!document.getElementById(id)),
