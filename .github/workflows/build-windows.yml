@@ -32,7 +32,8 @@ jobs:
   publish-release:
     name: Publish verified v0.1.10 prerelease
     needs: windows-portable
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'release: publish verified Windows v0.1.10 prerelease' }}
+    if: >-
+      ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'release: publish verified Windows v0.1.10 prerelease' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
