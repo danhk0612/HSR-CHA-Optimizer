@@ -1,6 +1,7 @@
 import { createRelicIndex, enrichRelic } from './relic-stats.mjs';
 import { filterCandidateRelics } from './relic-filters.mjs';
 import { statsForExport } from './character-stats.mjs';
+import { compareCharacterSheet } from './stat-comparison.mjs';
 
 // Read-only AI hand-off: use original account values and Korean game definitions.
 // Do not simulate in-game final stats or score relics.
@@ -165,7 +166,9 @@ export function buildAiReport(scanner, tables, manifest, options = {}) {
     const relics = (scanner.relics ?? []).filter(item => String(item.location) === id);
     const details = compactCharacter(owned, tables, cones, relics, relicIndex);
     const sheet = statsForExport(providedStats, id);
-    return sheet ? { ...details, characterSheet: sheet } : details;
+    if (!sheet) return details;
+    const comparison = compareCharacterSheet(providedStats.characters?.[id], owned);
+    return { ...details, characterSheet: comparison ? { ...sheet, comparison } : sheet };
   });
   const candidates = selectCandidates(scanner, tables, wanted, options, relicIndex);
   const observedCount = selectedCharacters.filter(c => c.characterSheet?.manualObserved).length;
