@@ -174,10 +174,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
           await writeFile(savedFile, JSON.stringify(request), 'utf8');
           return { path: savedFile, extension: 'json' };
         });
-        await new Promise(resolve => {
-          win.webContents.once('did-finish-load', resolve);
-          win.webContents.reloadIgnoringCache();
-        });
+        await win.loadFile(join(__dirname, '..', 'public', 'index.html'));
 
         const interaction = await win.webContents.executeJavaScript(`(async () => {
           const ensure = (test, label) => { if (!test) throw new Error(label); };
