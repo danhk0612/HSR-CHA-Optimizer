@@ -23,6 +23,7 @@ const server = createServer(async (req, res) => {
       version: data.manifest.version, importedAt: data.imported.importedAt,
       characters: characterList, lightCones: data.scanner.light_cones?.length ?? 0,
       relics: data.scanner.relics?.length ?? 0,
+      unequippedRelics: data.scanner.relics?.filter(item => !item.location).length ?? null,
     })); return;
   }
   if (req.method === 'POST' && req.url === '/api/export') {
@@ -40,6 +41,7 @@ const server = createServer(async (req, res) => {
         candidateMode: body.candidateMode ?? 'none',
         candidateSetIds: body.candidateSetIds ?? [],
         minRarity: body.minRarity ?? 0,
+        candidateLimit: body.candidateLimit,
         includeResources: body.includeResources === true,
         importedAt: data.imported.importedAt,
       };
