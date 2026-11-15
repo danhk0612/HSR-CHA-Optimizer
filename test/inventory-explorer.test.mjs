@@ -171,6 +171,7 @@ test('human-readable HTML escapes game data instead of executing markup', () => 
   assert.doesNotMatch(html, /<script>/);
   assert.match(html, /<table>/);
   assert.match(html, /성혼 1/);
+  assert.match(html, /th,td\{[^}]*overflow-wrap:anywhere/);
 });
 
 test('JSON, Markdown and HTML format preserve explicit selection metadata', () => {
