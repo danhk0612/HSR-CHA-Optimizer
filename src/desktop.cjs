@@ -223,6 +223,20 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
           change(field('characters', 'sortBy'), 'level');
           change(field('characters', 'direction'), 'desc');
           act('characters', 'selectFiltered').click();
+          switchTab('relics');
+          change(field('relics', 'statKey'), 'SPD');
+          fill(field('relics', 'minStatValue'), '4');
+          act('relics', 'selectFiltered').click();
+          ensure(panel('relics').querySelector('.count').textContent.includes('선택 1개'),
+            '유물 부옵션 조건 선택 실패');
+          switchTab('ornaments');
+          change(field('ornaments', 'statKey'), 'SPD');
+          fill(field('ornaments', 'minStatValue'), '2');
+          act('ornaments', 'selectFiltered').click();
+          ensure(panel('ornaments').querySelector('.count').textContent.includes('선택 1개'),
+            '장신구 부옵션 조건 선택 실패');
+          ensure(field('relics', 'minStatValue').value === '4',
+            '장신구 조건 변경으로 유물 필터가 초기화됨');
           switchTab('materials');
           ensure(panel('materials').querySelectorAll('tbody tr').length === 50,
             '첫 페이지는 50건이어야 함');
@@ -236,7 +250,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
           toggle.click();
           ensure(!document.querySelector('#tabBar [data-group="materials"]'),
             '종류 체크 해제 후 탭이 남아 있음');
-          ensure(document.getElementById('exportStatus').textContent.includes('3개 선택'),
+          ensure(document.getElementById('exportStatus').textContent.includes('5개 선택'),
             '종류 체크 해제 후 출력 후보에서 재료를 제외하지 않음');
           toggle.click();
           ensure(document.querySelector('#tabBar [data-group="materials"]'),
@@ -254,7 +268,8 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
             'IPC 선택 파일 저장');
           return {
             categories: 5, uniqueSearches: true, persistentSort: true,
-            retainedSelections: true, pagination: true, pageWideBulkSelect: true,
+            retainedSelections: true, relicFilters: true, ornamentFilters: true,
+            pagination: true, pageWideBulkSelect: true,
             hiddenGroupExclusion: true, preview: true, save: true,
           };
         })()`);
@@ -264,7 +279,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
         const onDisk = JSON.parse(await readFile(savedFile, 'utf8'));
         if (!previewRequest || !savedRequest ||
             JSON.stringify(onDisk) !== JSON.stringify(savedRequest) ||
-            savedRequest.keys.length !== 58 ||
+            savedRequest.keys.length !== 60 ||
             savedRequest.keys.filter(key => key.startsWith('material:')).length !== 55 ||
             savedRequest.orderKeys.slice(0, 2).join(',') !== 'character:0,character:1' ||
             savedRequest.orderKeys[2] !== 'lightCone:1' ||
@@ -274,7 +289,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
               saved: savedRequest?.keys?.length,
               firstKeys: savedRequest?.orderKeys?.slice(0, 4) }));
         }
-        console.log('Electron GUI smoke PASS: 독립 탭 검색/정렬, 필터/선택 유지, 55개 페이지 일괄 선택, 미리보기 및 파일 저장');
+        console.log('Electron GUI smoke PASS: 독립 탭 검색/정렬, 필터/선택 유지, 유물/장신구 독립 부옵션, 55개 페이지 일괄 선택, 미리보기 및 파일 저장');
         app.exit(0);
       } catch (error) {
         console.error(error);
