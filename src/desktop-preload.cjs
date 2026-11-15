@@ -4,6 +4,10 @@ contextBridge.exposeInMainWorld('hsrDesktop', {
   getState: () => ipcRenderer.invoke('hsr:state'),
   exportData: (options) => ipcRenderer.invoke('hsr:export', options),
   exportPublicData: (options) => ipcRenderer.invoke('hsr:public-export', options),
+  prepareEnemies: () => ipcRenderer.invoke('hsr:enemy-sync'),
+  onEnemyProgress: (callback) => {
+    ipcRenderer.on('hsr:enemy-progress', (_event, detail) => callback(detail));
+  },
   importArchive: () => ipcRenderer.invoke('hsr:import'),
   importSavedShowcase: () => ipcRenderer.invoke('hsr:showcase-import'),
   saveManualSheet: (id, values) => ipcRenderer.invoke('hsr:manual-save', { id, values }),
