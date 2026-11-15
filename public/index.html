@@ -454,7 +454,7 @@ async function refreshState() {
   }
   all = state.characters ?? [];
   el('fullAccountSummary').textContent = state.ready
-    ? '스캔 기준: 캐릭터 ' + all.length + '명 · 광추 ' +
+    ? '스캔 기준: 캐릭터 ' + (state.characters?.length ?? 0) + '명 · 광추 ' +
       state.lightCones + '개 · 유물 ' + state.relics +
       '개 · 모든 장착/미장착 장비 포함 (후보 필터 미적용)'
     : '게임 데이터 및 계정 JSON을 먼저 준비하세요.';
