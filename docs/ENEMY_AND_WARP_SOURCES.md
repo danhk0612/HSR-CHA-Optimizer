@@ -20,12 +20,24 @@
 4. [FortOfFans/HSRMaps](https://github.com/FortOfFans/HSRMaps)
    - `monster` 종류를 제공한다고 설명하지만 README 기준 `Beta 2.2.53`으로 버전이 오래되어 4.7.0의 최신 적 정보로 사용하면 안 됩니다.
 
+### 0.1.7 검증된 정식 릴리스 적 템플릿 인덱스
+
+- 선택 소스: [DimbreathBot/TurnBasedGameData의 정식 릴리스 4.7.0 커밋](https://github.com/DimbreathBot/TurnBasedGameData/commit/dad9155eb00fdeda31fb8456507c53590d49071f). 제목 `OSPRODWin4.7.0_D17180467_A17176203_L17175930`이며, 이 커밋에 아래 파일 4개가 실제 존재함을 확인함.
+- 원본 파일: `ExcelOutput/MonsterTemplateConfig.json` (**665개의 객체 배열**), `TextMap/TextMapMainKR.json`, `TextMap/TextMapKR_0.json`, `TextMap/TextMapKR_1.json`.
+- 원본에서 확인한 필드: `MonsterTemplateID`, `MonsterName.Hash`, `Rank`, `AttackBase.Value`, `DefenceBase.Value`, `HPBase.Value`, `SpeedBase.Value`, `StanceBase.Value`, `StatusResistanceBase.Value`, `StanceType`.
+- 데이터 종류: `MinionLv2` 279, `Elite` 163, `LittleBoss` 157, `BigBoss` 41, `Minion` 25개. 모두 **원본 Rank 값을 변경하지 않음**.
+- 해시 정밀도: 실제 `MonsterName.Hash` 예시 `329737901974927635`. JavaScript 기본 `JSON.parse`는 정밀도를 잃을 수 있으므로 **파싱 전에 `Hash` 숫자를 문자열로 바꿔** 한국어 TextMap 키에 연결함. 연동할 이름이 없거나 한국어 파일 간 같은 해시가 충돌하면 `null`로 유지함.
+- 데이터 모델: 적 기초 템플릿의 수치만 보여주며 실제 전투 레벨·모드 별 HP/방어력 보정 또는 버프를 계산하지 않음. 특히 `StanceType`은 원본 필드명 그대로 유지하며 이를 약점/속성 저항으로 단정하지 않음.
+- 별도 다운로드: GUI에서 **명시적으로 '적·보스 데이터 별도 준비'를 누를 때만** 4개의 원본을 가져옴. 다운로드 대상 파일 중 한국어 TextMap은 크기가 매우 커질 수 있음. 원본 전체를 앱에 동봉하지 않고 변환 결과만 `.local-data/game/enemies/index.json`에 보관하며 계정 원본/20종 StarRailRes 인덱스는 수정하지 않음.
+- 정합성: 현재 동기화 게임 버전이 4.7.0과 다르면 다운로드를 중단. 원본 파일 4개가 모두 다운로드되어 파싱되고 한국어 이름이 하나 이상 연결되어야 저장함. 도중 실패는 이전 성공 자료 유지.
+- **현재 확인된 것:** 정식 커밋 식별, 적 원본 665건의 ID/원시 수치/해시 구조, 언어 파일 4개 경로 존재. **미확인:** 사용자 PC에서 대용량 한국어 TextMap을 받아 실제로 연결되는 이름 비율, 일부 이름의 게임 화면 표기 일치 여부. 이름 연결률은 다운로드가 끝난 뒤 실제 결과로 표시해야 하며 100%라고 미리 가정할 수 없음.
+
 ### 구현 보류 이유 및 다음 기준
 
 - 한국어 적 이름/ID, 분류/약점/내성/기초값/레벨 계수/스킬이 각각 **어느 원본 필드에서 왔는지** 검증해야 합니다.
 - 공개된 정식 출시 버전과 테스트/유출 데이터가 혼재하지 않도록 버전 검증 및 필터가 필요합니다.
 - 타 저장소의 데이터 재배포 허용 조건과 게임 콘텐츠 저작권을 확인해야 합니다.
-- 이 조건을 충족한 **작은 적·보스 샘플**에서 먼저 교차검증한 후에만 별도 선택형 인덱스로 추가합니다. 현재 20종 동기화에는 섞지 않습니다.
+- 0.1.7은 **정식 4.7.0의 적 템플릿 기본값과 한국어 이름 해시 매칭만** 별도 선택형 인덱스로 구현함. 약점·스킬·실전 내성값 등 미확인 데이터는 검증 전까지 추가하지 않습니다. 현재 20종 동기화에는 섞지 않습니다.
 
 ## 워프 천장·확정 정보
 
