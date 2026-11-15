@@ -100,7 +100,7 @@ Portable EXE를 실행하면 자체 Windows 창이 열립니다.
 
 ## 현재 남은 작업
 
-- Windows 0.1.10의 실계정 Electron 5종 탭/선택 및 JSON·Markdown·HTML 임시 파일 저장 검사 (`npm run verify:local-win`). 이 검사는 저장 대화상자를 우회해 임시 폴더만 사용하므로, 실제 사용자가 직접 파일 이름과 위치를 지정하는 흐름은 별도 확인이 필요합니다.
+- Windows 0.1.10 실계정 Electron 5종 탭/선택 및 JSON·Markdown·HTML 임시 파일 저장 검사는 `npm run verify:local-win`으로 통과했습니다(97/97 테스트, 실제 계정 5종 각 2개 선택, 3개 형식 임시 저장·내용 검증, 2026-11-15). **남은 확인:** Portable EXE에서 사용자가 저장 대화상자로 파일 이름과 경로를 지정하고, 실제 저장한 JSON·Markdown·HTML 파일의 가독성을 직접 확인해야 합니다.
 - 0.1.10에서는 각 자료 종류별 필터 조건을 조합하고 해당 종류의 검색 결과를 페이지 제한 없이 일괄 선택할 수 있습니다.
 - **별도 프로그램 아이콘 SVG 적용됨** (`build/icon.svg`, electron-builder 변환); 미서명 EXE 유지
 - 설치형 배포는 현재 범위에서 제외 (Portable 우선)
