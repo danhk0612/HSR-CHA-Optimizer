@@ -22,7 +22,7 @@
 - **직접적인 UID API 통신 없음.** 로컬 파일만 열고 사용자 계정 정보는 외부에 전송하지 않음.
 - **출처와 시점:** 수동 입력은 `manualObserved` 및 입력 시각 `recordedAt`, Mihomo 공개 전시는 `publicShowcaseCalculated` 및 파일 가져온 시각 `importedAt` 표시. 외부 API 원본 스냅샷의 실제 수집 시각은 확인할 수 없으므로 `originalCaptureTimeKnown:false`로 명시.
 - **계산 결과 혼동 방지:** Mihomo의 기초 능력치 `attributes`, 추가 능력치 `additions`, 상세 효과 `properties`를 원본별 분리 보존. 값들을 독단적으로 합산해 게임 화면에서 관측한 최종 스탯이라고 주장하지 않음.
-- **독립 저장:** `.local-data/account/character-stats.json`에 캐릭터별 수동/공개 전시 값을 따로 저장. `scanner.json`을 변경하지 않음. 파일의 원본 플레이어 UID와 닉네임도 새 저장소·AI 출력에 복사하지 않음.
+- **독립 저장:** `.local-data/account/character-stats-<해시>.json`에 캐릭터별 수동/공개 전시 값을 따로 저장. `scanner.json`을 변경하지 않음. 파일의 원본 플레이어 UID와 닉네임도 새 저장소·AI 출력에 복사하지 않음.
 - **부분 보완:** 공개 전시에 없는 캐릭터도 수동 입력 가능. AI 출력 `limitations.characterSheetCoverage`는 선택한 캐릭터 중 보완된 인원수를 구분.
 
 공식 기술 문서: [MiHoMo Parsed Data API](https://march7th.xyz/en/api/parsed.html). 비공식 커뮤니티 서비스이며 게임 계정 전체의 능력치를 모두 조회하지는 못합니다.
