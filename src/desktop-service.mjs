@@ -5,6 +5,8 @@ import { buildAiReport, toAiMarkdown, resolveCharacterName } from './ai-report.m
 import { buildCandidateFilterOptions } from './relic-filters.mjs';
 import { exportPublicData } from './public-data-files.mjs';
 import { readEnemyIndex, syncEnemyData } from './enemy-files.mjs';
+import { buildFullAccountReport, buildFullAccountBundle } from './full-account-export.mjs';
+import { readAnalysisPreferences, saveAnalysisPreferences } from './analysis-preferences.mjs';
 import { readLatestGameChangeReport } from './game-changes.mjs';
 import { compareCharacterSheet } from './stat-comparison.mjs';
 import { WARP_POOLS, readWarpState, saveManualWarpPool, clearManualWarpPool } from './warp-state.mjs';
@@ -31,6 +33,7 @@ export async function getDesktopState(root) {
     characterStatComparisons: {},
     characterStatsSummary: { manual: 0, showcase: 0 },
     warpPools: WARP_POOLS, warpState: { pools: {} },
+    analysisPreferences: { text: '', updatedAt: null },
   };
   if (gameReady) {
     const current = JSON.parse(await readFile(join(base, 'game', 'current.json'), 'utf8'));
@@ -46,6 +49,7 @@ export async function getDesktopState(root) {
   const data = await loadAccountData(root);
   const sheet = await readCharacterStats(root, data.scanner);
   const warpState = await readWarpState(root, data.scanner);
+  const analysisPreferences = await readAnalysisPreferences(root, data.scanner);
   return {
     ...empty,
     ready: true,
@@ -67,7 +71,7 @@ export async function getDesktopState(root) {
         .map(item => [String(item.id), compareCharacterSheet(sheet.characters[String(item.id)], item)])
         .filter(([, comparison]) => comparison !== null)),
     characterStatsSummary: getCharacterStatsSummary(sheet),
-    warpState,
+    warpState, analysisPreferences,
   };
 }
 
@@ -124,4 +128,26 @@ export async function saveWarpPool(root, name, input) {
 export async function clearWarpPool(root, name) {
   const { scanner } = await loadAccountData(root);
   return clearManualWarpPool(root, scanner, name);
+}
+
+export async function buildFullAccountForDesktop(root) {
+  const data = await loadAccountData(root);
+  const [characterStats, manualWarpState, preferences] = await Promise.all([
+    readCharacterStats(root, data.scanner),
+    readWarpState(root, data.scanner),
+    readAnalysisPreferences(root, data.scanner),
+  ]);
+  return buildFullAccountReport(data.scanner, data.tables, data.manifest, {
+    importedAt: data.imported.importedAt,
+    characterStats, manualWarpState, analysisPreferences: preferences.text,
+  });
+}
+
+export async function buildFullAccountFolder(root) {
+  return buildFullAccountBundle(await buildFullAccountForDesktop(root));
+}
+
+export async function saveAccountAnalysisPreferences(root, text) {
+  const { scanner } = await loadAccountData(root);
+  return saveAnalysisPreferences(root, scanner, text);
 }
