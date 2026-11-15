@@ -19,6 +19,17 @@ button:disabled{opacity:.5;cursor:wait}.actions{display:flex;gap:8px;margin:18px
 textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:1.5}
 #message{min-height:20px;color:#a9c8ff;margin-top:12px;white-space:pre-line}
 [hidden]{display:none!important}.desktop-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px;padding:14px;border:1px solid #2a3852;background:#171f32;border-radius:12px}.desktop-toolbar small{color:#a6b4cc}.desktop-toolbar button{padding:10px 12px}
+.candidate-filter-area{margin:14px 0 10px;padding:12px;border:1px solid #33435f;border-radius:10px}
+.candidate-filter-area legend{font-size:13px;font-weight:700;color:#cedbff;padding:0 6px}
+.candidate-filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.candidate-filter-group{border:1px solid #33435f;border-radius:8px;background:#0f1a2d;min-width:0}
+.candidate-filter-group summary{padding:11px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:6px}
+.candidate-filter-group summary span{color:#a6b4cc;white-space:nowrap;font-size:12px}
+.candidate-filter-choices{padding:6px 8px;max-height:210px;overflow:auto;border-top:1px solid #33435f}
+.candidate-filter-option{display:flex;gap:8px;align-items:center;font-size:12px;margin:0;padding:6px 3px;cursor:pointer}
+.candidate-filter-option span{min-width:0;flex:1}.candidate-filter-option small{color:#a6b4cc;white-space:nowrap}
+.candidate-filter-area>p{margin:11px 4px 0}
+@media(max-width:650px){.candidate-filter-grid{grid-template-columns:1fr}}
 @media(max-width:850px){main{grid-template-columns:1fr}.shell{padding:15px}header{align-items:start;flex-direction:column}}
 </style></head>
 <body><div class="shell"><header><div><h1>HSR-CHA-Optimizer</h1>
@@ -38,6 +49,16 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 <option value="all">미장착 유물 전체</option></select></div>
 <div><label for="minRarity">후보 최소 등급</label><select id="minRarity">
 <option value="0">제한 없음</option><option value="5">5성만</option><option value="4">4성 이상</option></select></div></div>
+<fieldset id="candidateFilterArea" class="candidate-filter-area" hidden>
+<legend>미장착 유물 세부 조건</legend>
+<div class="candidate-filter-grid">
+<details class="candidate-filter-group"><summary>유물 세트 <span id="candidateSetCount">전체</span></summary><div id="candidateSetChoices" class="candidate-filter-choices"></div></details>
+<details class="candidate-filter-group"><summary>부위 <span id="candidateSlotCount">전체</span></summary><div id="candidateSlotChoices" class="candidate-filter-choices"></div></details>
+<details class="candidate-filter-group"><summary>주옵션 <span id="candidateMainCount">전체</span></summary><div id="candidateMainChoices" class="candidate-filter-choices"></div></details>
+<details class="candidate-filter-group"><summary>부옵션 <span id="candidateSubCount">전체</span></summary><div id="candidateSubChoices" class="candidate-filter-choices"></div></details>
+</div>
+<p>같은 종류의 선택은 OR, 서로 다른 종류는 AND로 적용됩니다. 부옵션은 현재 획득한 옵션만 검사하며 미개방 미리보기 옵션은 제외합니다.</p>
+</fieldset>
 <label for="candidateLimit">후보 최대 포함 개수 (비워두면 전체)</label><input id="candidateLimit" type="number" min="1" step="1" placeholder="전체" aria-describedby="candidateHint">
 <p id="candidateHint">미장착 유물을 전체 포함하면 파일이 커질 수 있습니다. 후보 점수나 순위는 계산하지 않습니다.</p>
 <label class="check"><input type="checkbox" id="resources"> 성옥·티켓·재료 수량 포함</label>
@@ -51,6 +72,55 @@ const el = id => document.getElementById(id);
 const desktop = window.hsrDesktop ?? null;
 const selected = new Set();
 let all = [], output = '', outputFormat = 'json';
+const filterGroups = [
+  { field: 'setIds', source: 'sets', target: 'candidateSetChoices', counter: 'candidateSetCount' },
+  { field: 'slots', source: 'slots', target: 'candidateSlotChoices', counter: 'candidateSlotCount' },
+  { field: 'mainstats', source: 'mainstats', target: 'candidateMainChoices', counter: 'candidateMainCount' },
+  { field: 'substats', source: 'substats', target: 'candidateSubChoices', counter: 'candidateSubCount' },
+];
+
+function updateFilterVisibility() {
+  el('candidateFilterArea').hidden = el('candidateMode').value === 'none';
+}
+
+function renderRelicFilters(options = {}) {
+  for (const group of filterGroups) {
+    const container = el(group.target);
+    const counter = el(group.counter);
+    container.replaceChildren();
+    counter.textContent = '전체';
+    for (const choice of options[group.source] ?? []) {
+      const label = document.createElement('label');
+      label.className = 'candidate-filter-option';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = choice.value;
+      checkbox.addEventListener('change', () => {
+        const count = container.querySelectorAll('input:checked').length;
+        counter.textContent = count ? count + '개 선택' : '전체';
+        invalidateOutput();
+      });
+      const name = document.createElement('span');
+      name.textContent = choice.label;
+      const amount = document.createElement('small');
+      amount.textContent = choice.count.toLocaleString();
+      label.append(checkbox, name, amount);
+      container.append(label);
+    }
+    if (!container.childElementCount) {
+      const empty = document.createElement('p');
+      empty.textContent = '선택 가능한 항목 없음';
+      container.append(empty);
+    }
+  }
+}
+
+function selectedRelicFilters() {
+  return Object.fromEntries(filterGroups.map(group => [
+    group.field,
+    [...el(group.target).querySelectorAll('input:checked')].map(node => node.value),
+  ]));
+}
 
 function invalidateOutput() {
   if (!output) return;
@@ -102,6 +172,8 @@ async function refreshState() {
   const gameText = state.version ?? '미설치';
   el('stats').textContent = '게임 ' + gameText + ' · 캐릭터 ' + all.length +
     ' · 광추 ' + state.lightCones + ' · 유물 ' + state.relics;
+  renderRelicFilters(state.candidateFilterOptions);
+  updateFilterVisibility();
   const unassigned = state.unequippedRelics;
   el('candidateHint').textContent = unassigned == null
     ? '후보가 많으면 출력 파일이 커집니다. 제한 개수를 지정해도 우열을 판단하지 않고 원본 순서대로 포함합니다.'
@@ -117,7 +189,11 @@ async function refreshState() {
 }
 await refreshState();
 el('filter').addEventListener('input', render);
-for (const id of ['candidateMode','minRarity','candidateLimit','resources','format']) {
+el('candidateMode').addEventListener('change', () => {
+  updateFilterVisibility();
+  invalidateOutput();
+});
+for (const id of ['minRarity','candidateLimit','resources','format']) {
   el(id).addEventListener('change', invalidateOutput);
 }
 
@@ -165,6 +241,7 @@ el('generate').addEventListener('click', async () => {
       characterIds: ids, candidateMode: el('candidateMode').value,
       minRarity: Number(el('minRarity').value),
       ...(el('candidateLimit').value.trim() ? { candidateLimit: Number(el('candidateLimit').value) } : {}),
+      candidateFilters: selectedRelicFilters(),
       includeResources: el('resources').checked, format: el('format').value,
     };
     if (options.candidateLimit !== undefined &&
