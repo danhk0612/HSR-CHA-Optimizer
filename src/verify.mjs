@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { loadAccountData } from './account-files.mjs';
 import { buildAiReport, toAiMarkdown } from './ai-report.mjs';
 import { buildFullAccountReport, buildFullAccountBundle } from './full-account-export.mjs';
+import { buildInventoryCatalog, filterInventoryCatalog, selectInventoryForExport,
+  formatSelectedInventory } from './inventory-explorer.mjs';
 
 // Read actual local files; never upload, modify, or print user UID.
 const { tables, scanner, manifest, imported } = await loadAccountData();
@@ -74,6 +76,38 @@ assert.equal(accountBundle.manifest.files.filter(file => file.file.startsWith('0
 assert.ok(!JSON.stringify(accountBundle.files).includes(String(scanner.metadata?.uid ?? 'never-match')),
   '전체 계정 출력에 UID가 포함됐습니다.');
 
+// Confirm selective browsing against the REAL 75/445/2649 account, not a synthetic fixture.
+const catalog = buildInventoryCatalog(complete);
+assert.equal(catalog.counts.characters, scanner.characters.length);
+assert.equal(catalog.counts.lightCones, scanner.light_cones.length);
+assert.equal(catalog.counts.relics + catalog.counts.ornaments, scanner.relics.length);
+assert.equal(catalog.counts.materials, scanner.materials?.length ?? 0);
+assert.equal(catalog.rows.length,
+  scanner.characters.length + scanner.light_cones.length +
+  scanner.relics.length + (scanner.materials?.length ?? 0));
+const enhancedRelic = catalog.rows.find(item =>
+  (item.group === 'relics' || item.group === 'ornaments') && item.substats?.length);
+assert.ok(enhancedRelic, '실계정 유물 상세 필터에 필요한 부옵션이 없습니다.');
+const matched = filterInventoryCatalog(catalog.rows, {
+  group: enhancedRelic.group, sets: [enhancedRelic.setId],
+  slots: [enhancedRelic.slot], mainstats: [enhancedRelic.mainstat],
+  substats: [enhancedRelic.substats[0].key],
+  minLevel: enhancedRelic.level, maxLevel: enhancedRelic.level,
+});
+assert.ok(matched.some(item => item.key === enhancedRelic.key));
+const selectedExport = selectInventoryForExport(complete, {
+  keys: [complete.characters[0].key, enhancedRelic.key],
+  includeReference: true, sortBy: 'level', descending: true,
+});
+assert.equal(selectedExport.characters.length, 1);
+assert.equal(selectedExport.relics.length, 1);
+assert.equal(selectedExport.selection.counts[enhancedRelic.group], 1);
+assert.equal(selectedExport.selection.availableCounts.characters, scanner.characters.length);
+assert.ok(formatSelectedInventory(selectedExport, 'markdown').text.includes('미선택'));
+assert.ok(formatSelectedInventory(selectedExport, 'html').text.includes('<table>'));
+assert.ok(!JSON.stringify(selectedExport).includes(String(scanner.metadata?.uid ?? 'never-match')),
+  '선택 출력에 UID가 포함됐습니다.');
+
 const matchingCharacters = scanner.characters.filter(item => tables.characters[String(item.id)]).length;
 const matchingCones = (scanner.light_cones ?? []).filter(item => tables.light_cones[String(item.id)]).length;
 const matchingRelics = (scanner.relics ?? []).filter(item => tables.relic_sets[String(item.set_id)]).length;
@@ -84,3 +118,4 @@ const materialMatches = scanner.materials?.filter(item => tables.items[String(it
 console.log(`통합 검증 통과: 게임 ${manifest.version}, 캐릭터 ${matchingCharacters}/${scanner.characters.length}, 광추 ${matchingCones}/${scanner.light_cones.length}, 유물 ${matchingRelics}/${scanner.relics.length}, 한국어 재료 ${materialMatches}/${scanner.materials?.length ?? 0}`);
 console.log(`AI용 실제 데이터 출력: 캐릭터 1명, 장착 유물 주옵션 ${derivedRelics.length}/${actualRelics.length}개 값 연결, 조건별 미장착 유물 필터 ${specific.candidates.matching}개 일치/1개 출력, UID 제외 확인`);
 console.log(`전체 계정 AI 자료 검증: 캐릭터 ${complete.characters.length}명 / 광추 ${complete.lightCones.length}개 / 유물 ${complete.relics.length}개, 분할 파일 ${Object.keys(accountBundle.files).length}개, 누락 0개·UID 제외`);
+console.log(`탐색·선택 출력 검증: 캐릭터 ${catalog.counts.characters}명 / 광추 ${catalog.counts.lightCones}개 / 유물 ${catalog.counts.relics}개 / 장신구 ${catalog.counts.ornaments}개 / 재료 ${catalog.counts.materials}종, 실제 필터·JSON·Markdown·HTML 정상`);
