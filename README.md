@@ -16,12 +16,13 @@
 - [x] 요구사항 및 개발 단계 정리
 - [x] StarRailRes 한국어 데이터 동기화 CLI 초안
 - [x] 단일 캐릭터 공개 데이터 Markdown/JSON 내보내기 CLI 초안
-- [x] 로컬 브라우저 GUI 및 Electron 독립형 창 연결 (Windows 실행 검증 전)
+- [x] 로컬 브라우저 GUI 및 Electron Portable EXE 실사용 검증
 - [x] Reliquary Archiver 0.20.0 실제 JSON 가져오기·기존 전체 출력 검증
 - [x] Windows Portable EXE 빌드 설정·첫 실행 데이터 동기화/가져오기 GUI 반영
 - [x] Windows Portable EXE 0.1.0 및 0.1.1 빌드 성공 (사용자 로그)
 - [x] 0.1.1 자체 아이콘 포함 EXE 빌드·자동 실행 검증 성공 및 실제 사용 흐름 확인 (사용자 보고)
-- [x] 0.1.2 AI용 유물 주옵션 수치·부옵션 한국어 이름 및 단위 정보 추가 (Windows 재검증 대기)
+- [x] 0.1.2 실제 계정 26건 단위 테스트·주옵션 수치 6/6 검증·Windows 빌드 성공
+- [x] 0.1.3 세트·부위·주옵션·부옵션 다중 선택 필터 및 복합 조건 (Windows 재검증 대기)
 - [ ] 공개 전시 기반 최종 능력치 부분 수집 검토 (전체 보유 계정은 대체 불가)
 - [x] AI용 간결 출력·미장착 유물 후보 선택·재료 한국어화 (실제 파일 기반 통합 검증)
 
@@ -86,7 +87,7 @@ npm install --no-audit --no-fund
 npm run verify:local-win
 ```
 
-예상 산출물: `dist/HSR-CHA-Optimizer-0.1.2-portable.exe`. 0.1.1은 Windows에서 빌드·실행·동기화·가져오기·저장까지 검증됐습니다. 0.1.2는 유물 숫자·한글 표시를 추가했으므로 새 통합 테스트 및 빌드 확인이 필요합니다. `verify:local-win`은 기존 `.local-data`의 실제 계정 검증까지 포함합니다. 일반 CI에서 사용하는 `verify:win`은 개인정보 파일이 필요하지 않습니다.
+예상 산출물: `dist/HSR-CHA-Optimizer-0.1.3-portable.exe`. 0.1.2는 Windows에서 26건 테스트·실제 계정 검증·빌드·Electron 실행 검사에 통과했습니다. 0.1.3은 유물 후보 세부 필터가 추가되어 통합 검증이 필요합니다. `verify:local-win`은 기존 `.local-data`의 실제 계정 검증까지 포함합니다. 일반 CI에서 사용하는 `verify:win`은 개인정보 파일이 필요하지 않습니다.
 
 첫 실행 시 프로그램에서 **게임 데이터 동기화 → 계정 JSON 가져오기**를 누르면 됩니다. 개발용 `npm run desktop`은 기존 `.local-data`를 재사용하며, 패키징한 EXE는 Windows 사용자 데이터 폴더에 따로 저장합니다. 개인 자료는 EXE에 포함되지 않습니다.
 
@@ -97,7 +98,7 @@ npm run verify:local-win
 **현재 데이터가 이미 준비되어 있다면 다시 스캔하거나 `npm run sync`를 실행할 필요가 없습니다.**
 
 ```powershell
-# 테스트 26건 + 실제 로컬 계정의 통합 출력 검증
+# 테스트 33건 + 실제 로컬 계정의 통합 출력 검증
 npm run verify
 
 # 로컬 브라우저 화면 실행 (Ctrl+C로 종료)
@@ -105,7 +106,7 @@ npm run gui
 # 브라우저에서 http://127.0.0.1:8765 접속
 ```
 
-`npm run gui`는 기존 로컬 브라우저 화면(127.0.0.1)입니다. `npm run desktop`은 Electron 창이며, `npm run dist:win`으로 Windows Portable EXE를 빌드하도록 구성했습니다. 실제 Windows 빌드 검증은 남아 있습니다. 캐릭터 다중 선택, 검색, 유물 후보 범위 및 최대 개수, 재료 포함 여부, Markdown/JSON 미리보기·복사·저장을 지원합니다.
+`npm run gui`는 기존 로컬 브라우저 화면(127.0.0.1)입니다. `npm run desktop`은 Electron 창이며, `npm run dist:win`으로 Windows Portable EXE를 빌드하도록 구성했습니다. 0.1.2까지 Windows 빌드 검증을 완료했습니다. 캐릭터 다중 선택, 검색, 유물 후보 세부 필터·최대 개수, 재료 포함 여부, Markdown/JSON 미리보기·복사·저장을 지원합니다.
 
 CLI만 사용할 때:
 
@@ -129,6 +130,8 @@ node src/export-ai.mjs --character "아케론" --candidates all --json
 - **유물 주옵션**은 원본 키 외에 `mainstatDetail`로 한국어 이름·강화 단계별 산출 숫자·단위·출처를 제공합니다. 원본 게임 데이터의 `base + step × 유물 레벨`을 이용하며, 게임에서 직접 관측한 캐릭터의 최종 능력치는 아닙니다. 정확한 유물 원본을 구분할 수 없을 때는 `mainstatDetail: null`로 남깁니다.
 - **유물 부옵션**은 원본 `key`·`value`·`count`·`step`을 유지하고, 한국어 `name`·표시용 `displayValue`·`unit`를 추가합니다. 원본 수치의 반올림이나 변조는 하지 않습니다.
 - 개척자 이름은 원본 `{NICKNAME}` 대신 **개척자 (운명의 길 · 속성)**으로 표시합니다. 실제 계정 닉네임은 추측하지 않습니다. 주요 행적의 원본 설명에는 `unlocked` 상태를 함께 표시합니다.
+- **GUI 유물 후보 세부 필터 (0.1.3):** 미장착 후보 모드를 선택하면 유물 세트·부위·주옵션·부옵션을 펼쳐 여러 항목에 체크할 수 있습니다. 같은 범주의 여러 선택지는 **OR**, 다른 범주끼리는 **AND**로 조합합니다. 미선택 범주는 제한하지 않습니다. `장착 세트와 동일` 범위는 필터보다 먼저 적용하며, 필터 결과에 기존 최대 포함 개수를 적용합니다.
+- **부옵션 필터:** 현재 얻은 `substats`의 원본 키를 기준으로 검사하며, `preview_substats`에만 있는 속성은 일치로 처리하지 않습니다. 필터 조건 및 `matching`(조건 일치 전체 수) / `included`(실제 내보낸 수)는 JSON·Markdown에 함께 수록됩니다. 자동 평가·추천·유물 순위는 계산하지 않습니다.
 - 후보를 **미장착 유물 전체**로 설정하면 수천 개의 유물이 포함되어 수 MB 수준까지 커질 수 있습니다. AI에 전달할 때는 필요한 후보 범위만 선택하는 편이 효율적입니다. GUI의 **후보 최대 포함 개수**는 비워두면 전체이며, 지정하면 원본 순서 앞쪽부터 포함합니다(점수·순위 아님). 설정을 변경하면 이전 출력의 복사·저장은 비활성화됩니다.
 - AI용 간결 출력은 기존 `export:account`의 전체 원본 출력과 **별도 기능**입니다. 기존 출력은 유지됩니다.
 
