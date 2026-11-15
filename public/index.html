@@ -1116,9 +1116,14 @@ function invDraw() {
     const extra = document.createElement('td');
     const details = document.createElement('details');
     const summary = document.createElement('summary');
-    summary.textContent = [item.setName, item.slot, item.mainstat,
+    summary.textContent = [
+      item.setName, item.slot,
+      item.mainstatName ? '주옵션: ' + item.mainstatName +
+        (item.mainstatValue == null ? '' : ' ' + item.mainstatValue +
+          (item.mainstatUnit === '%' ? '%' : '')) : null,
       item.equippedName ? '장착: ' + item.equippedName : null,
-      item.substats?.length ? item.substats.map(s => (s.name ?? s.key) + ' ' + s.value).join(', ') : null,
+      item.substats?.length ? item.substats.map(s => (s.name ?? s.key) + ' ' +
+        (s.displayValue ?? s.value) + (s.unit === '%' ? '%' : '')).join(', ') : null,
     ].filter(Boolean).join(' · ') || '상세';
     const pre = document.createElement('pre');
     pre.textContent = JSON.stringify(item, null, 2);
