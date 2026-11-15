@@ -21,7 +21,8 @@
     "dist:win": "electron-builder --win portable --x64",
     "smoke:win": "node scripts/smoke-windows.mjs",
     "verify:win": "npm test && npm run dist:win && npm run smoke:win",
-    "verify:local-win": "npm run verify && npm run dist:win && npm run smoke:win"
+    "verify:local-win": "npm run verify && npm run dist:win && npm run smoke:win && npm run smoke:real-win",
+    "smoke:real-win": "node scripts/smoke-real-windows.mjs"
   },
   "main": "src/desktop.cjs",
   "devDependencies": {
