@@ -52,8 +52,9 @@ export function buildInventoryCatalog(report) {
       setId: relic.setId, setName: relic.setName,
       slot: raw.slot ?? null, mainstat: raw.mainstat ?? null,
       mainstatValue: finite(relic.mainstatDetail?.value),
-      substats: (raw.substats ?? []).map(s => ({
-        key: value(s.key), value: finite(s.value), count: finite(s.count),
+      substats: (raw.substats ?? []).map((s, i) => ({
+        key: value(s.key), name: relic.substats?.[i]?.name ?? value(s.key),
+        value: finite(s.value), count: finite(s.count),
       })),
       previewSubstats: (raw.preview_substats ?? []).map(s => ({
         key: value(s.key), value: finite(s.value), count: finite(s.count),
