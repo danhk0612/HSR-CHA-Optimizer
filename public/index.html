@@ -18,11 +18,17 @@ button{border:0;border-radius:9px;padding:11px 14px;background:#4774cf;color:whi
 button:disabled{opacity:.5;cursor:wait}.actions{display:flex;gap:8px;margin:18px 0 12px;flex-wrap:wrap}
 textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:1.5}
 #message{min-height:20px;color:#a9c8ff;margin-top:12px;white-space:pre-line}
+[hidden]{display:none!important}.desktop-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px;padding:14px;border:1px solid #2a3852;background:#171f32;border-radius:12px}.desktop-toolbar small{color:#a6b4cc}.desktop-toolbar button{padding:10px 12px}
 @media(max-width:850px){main{grid-template-columns:1fr}.shell{padding:15px}header{align-items:start;flex-direction:column}}
 </style></head>
 <body><div class="shell"><header><div><h1>HSR-CHA-Optimizer</h1>
 <p>보유 데이터와 한국어 게임 정보를 선택해 AI 전달용 자료로 정리합니다. 자동 추천·AI API 호출은 하지 않습니다.</p></div>
 <div class="stats" id="stats">데이터 읽는 중…</div></header>
+<div class="desktop-toolbar" id="desktopToolbar" hidden>
+<button id="syncGame" type="button">게임 데이터 동기화</button>
+<button id="importArchive" type="button" class="secondary">계정 JSON 가져오기</button>
+<small id="setupStatus">게임 데이터와 Reliquary Archiver JSON을 준비하세요.</small>
+</div>
 <main><section class="panel"><h2>보유 캐릭터</h2>
 <input id="filter" type="text" placeholder="캐릭터 이름 검색" autocomplete="off" aria-label="캐릭터 검색">
 <div class="roster" id="roster"></div></section>
@@ -39,38 +45,152 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 <label for="result">미리보기</label><textarea id="result" readonly placeholder="캐릭터를 선택하고 자료 생성을 누르세요."></textarea>
 <p id="message" role="status"></p></section></main></div>
 <script type="module">
-const el=id=>document.getElementById(id);
-const selected=new Set();let all=[],output='';
-const state=await fetch('/api/state').then(r=>r.json());all=state.characters;
-el('stats').textContent='게임 '+state.version+' · 캐릭터 '+all.length+' · 광추 '+state.lightCones+' · 유물 '+state.relics;
-function render(){
- const q=el('filter').value.trim().toLocaleLowerCase();el('roster').replaceChildren();
- for(const c of all.filter(x=>x.name.toLocaleLowerCase().includes(q))){
-   const label=document.createElement('label');label.className='person';
-   const check=document.createElement('input');check.type='checkbox';check.checked=selected.has(c.id);
-   check.addEventListener('change',()=>check.checked?selected.add(c.id):selected.delete(c.id));
-   const name=document.createElement('span');name.textContent=c.name;
-   const info=document.createElement('small');info.textContent='Lv.'+c.level+' · '+c.eidolon+'돌';
-   label.append(check,name,info);el('roster').append(label);
- }
+const el = id => document.getElementById(id);
+const desktop = window.hsrDesktop ?? null;
+const selected = new Set();
+let all = [], output = '', outputFormat = 'json';
+
+el('desktopToolbar').hidden = !desktop;
+
+function render() {
+  const q = el('filter').value.trim().toLocaleLowerCase();
+  el('roster').replaceChildren();
+  const matches = all.filter(x => x.name.toLocaleLowerCase().includes(q));
+  if (!matches.length) {
+    const empty = document.createElement('p');
+    empty.style.padding = '12px';
+    empty.textContent = all.length ? '검색 결과가 없습니다.' : '등록된 캐릭터가 없습니다. 계정 JSON을 가져오세요.';
+    el('roster').append(empty);
+    return;
+  }
+  for (const c of matches) {
+    const label = document.createElement('label');
+    label.className = 'person';
+    const check = document.createElement('input');
+    check.type = 'checkbox';
+    check.checked = selected.has(c.id);
+    check.addEventListener('change', () => check.checked ? selected.add(c.id) : selected.delete(c.id));
+    const name = document.createElement('span');
+    name.textContent = c.name;
+    const info = document.createElement('small');
+    info.textContent = 'Lv.' + c.level + ' · ' + c.eidolon + '돌';
+    label.append(check, name, info);
+    el('roster').append(label);
+  }
 }
-render();el('filter').addEventListener('input',render);
-el('generate').addEventListener('click',async()=>{
- const ids=[...selected];if(!ids.length){el('message').textContent='캐릭터를 한 명 이상 선택하세요.';return}
- el('generate').disabled=true;el('message').textContent='선택한 자료를 정리하고 있습니다…';
- try{
-   const res=await fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({characterIds:ids,candidateMode:el('candidateMode').value,
-       minRarity:Number(el('minRarity').value),includeResources:el('resources').checked,format:el('format').value})});
-   output=await res.text();if(!res.ok)throw Error(output);el('result').value=output;
-   el('copy').disabled=false;el('save').disabled=false;
-   el('message').textContent='완료: '+ids.length+'명 · '+new Blob([output]).size.toLocaleString()+'바이트';
- }catch(e){el('message').textContent='생성 실패: '+e.message;el('copy').disabled=true;el('save').disabled=true}
- finally{el('generate').disabled=false}
+
+async function refreshState() {
+  const state = desktop ? await desktop.getState() : await fetch('/api/state').then(r => r.json());
+  all = state.characters ?? [];
+  selected.clear();
+  const gameText = state.version ?? '미설치';
+  el('stats').textContent = '게임 ' + gameText + ' · 캐릭터 ' + all.length +
+    ' · 광추 ' + state.lightCones + ' · 유물 ' + state.relics;
+  if (desktop) {
+    el('setupStatus').textContent = state.ready
+      ? '계정 자료 준비 완료 · 최신 스캔 파일은 언제든 다시 가져올 수 있습니다.'
+      : (!state.gameReady ? '한국어 게임 데이터 동기화 필요 · ' : '') +
+        (!state.accountReady ? 'Reliquary Archiver JSON 가져오기 필요' : '');
+  }
+  render();
+}
+await refreshState();
+el('filter').addEventListener('input', render);
+
+if (desktop) {
+  desktop.onSyncProgress(p => {
+    el('setupStatus').textContent = '게임 데이터 동기화 ' + p.done + '/' + p.total + ': ' + p.filename;
+  });
+  el('syncGame').addEventListener('click', async () => {
+    el('syncGame').disabled = true;
+    el('setupStatus').textContent = '게임 데이터 동기화 시작…';
+    try {
+      const result = await desktop.syncGame();
+      await refreshState();
+      el('message').textContent = '게임 데이터 ' + result.version + ' 동기화 완료';
+    } catch (error) {
+      el('message').textContent = '게임 데이터 동기화 실패: ' + error.message;
+    } finally {
+      el('syncGame').disabled = false;
+    }
+  });
+  el('importArchive').addEventListener('click', async () => {
+    el('importArchive').disabled = true;
+    try {
+      const result = await desktop.importArchive();
+      if (result) {
+        await refreshState();
+        el('message').textContent = result.source + ' 가져오기 완료: 캐릭터 ' +
+          result.characters + '명 · 광추 ' + result.lightCones + '개 · 유물 ' + result.relics + '개';
+      }
+    } catch (error) {
+      el('message').textContent = '계정 JSON 가져오기 실패: ' + error.message;
+    } finally {
+      el('importArchive').disabled = false;
+    }
+  });
+}
+
+el('generate').addEventListener('click', async () => {
+  const ids = [...selected];
+  if (!ids.length) { el('message').textContent = '캐릭터를 한 명 이상 선택하세요.'; return; }
+  el('generate').disabled = true;
+  el('message').textContent = '선택한 자료를 정리하고 있습니다…';
+  try {
+    const options = {
+      characterIds: ids, candidateMode: el('candidateMode').value,
+      minRarity: Number(el('minRarity').value),
+      includeResources: el('resources').checked, format: el('format').value,
+    };
+    if (desktop) {
+      output = await desktop.exportData(options);
+    } else {
+      const res = await fetch('/api/export', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(options),
+      });
+      output = await res.text();
+      if (!res.ok) throw Error(output);
+    }
+    outputFormat = options.format;
+    el('result').value = output;
+    el('copy').disabled = false;
+    el('save').disabled = false;
+    el('message').textContent = '완료: ' + ids.length + '명 · ' +
+      new Blob([output]).size.toLocaleString() + '바이트';
+  } catch (error) {
+    el('message').textContent = '생성 실패: ' + error.message;
+    el('copy').disabled = true;
+    el('save').disabled = true;
+  } finally {
+    el('generate').disabled = false;
+  }
 });
-el('copy').addEventListener('click',async()=>{await navigator.clipboard.writeText(output);el('message').textContent='클립보드에 복사했습니다.'});
-el('save').addEventListener('click',()=>{
- const format=el('format').value;const url=URL.createObjectURL(new Blob([output],{type:'text/plain;charset=utf-8'}));
- const a=document.createElement('a');a.href=url;a.download='hsr-ai-export.'+(format==='json'?'json':'md');a.click();URL.revokeObjectURL(url);
+
+el('copy').addEventListener('click', async () => {
+  try {
+    if (desktop) await desktop.copyText(output);
+    else await navigator.clipboard.writeText(output);
+    el('message').textContent = '클립보드에 복사했습니다.';
+  } catch (error) {
+    el('message').textContent = '복사 실패: ' + error.message;
+  }
+});
+el('save').addEventListener('click', async () => {
+  if (desktop) {
+    try {
+      const saved = await desktop.saveText({ text: output, format: outputFormat });
+      if (saved) el('message').textContent = '파일 저장 완료';
+    } catch (error) {
+      el('message').textContent = '저장 실패: ' + error.message;
+    }
+    return;
+  }
+  const url = URL.createObjectURL(new Blob([output], { type: 'text/plain;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'hsr-ai-export.' + (outputFormat === 'json' ? 'json' : 'md');
+  a.click();
+  URL.revokeObjectURL(url);
 });
 </script></body></html>
