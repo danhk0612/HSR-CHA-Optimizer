@@ -4,6 +4,7 @@ import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { syncGameData } from '../src/sync-core.mjs';
+import { readLatestGameChangeReport } from '../src/game-changes.mjs';
 
 const rawFiles = [
   'paths', 'elements', 'properties',
@@ -33,6 +34,8 @@ test('shared game sync downloads 20 indexed tables and stores manifest for deskt
     assert.equal(result.language, 'kr');
     assert.equal(result.files.length, rawFiles.length);
     assert.equal(events.length, 20);
+    assert.equal(result.changes.status, 'initial');
+    assert.equal((await readLatestGameChangeReport(root)).status, 'initial');
     const current = JSON.parse(await readFile(join(root, '.local-data', 'game', 'current.json'), 'utf8'));
     assert.equal(current.version, '4.7.0');
     const items = JSON.parse(await readFile(join(root, '.local-data', 'game', '4.7.0', 'kr', 'items.json'), 'utf8'));
@@ -57,4 +60,39 @@ test('failed resync keeps previous complete indexed game data intact', async () 
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test('same-version resync records source changes and failed update preserves the last report', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hsr-sync-changes-'));
+  try {
+    let pass = 1;
+    const sourceWithChanges = async url => {
+      if (pass === 3 && url.endsWith('/relics.json')) return { ok: false, status: 404 };
+      const data = url.endsWith('/info.json')
+        ? { version: '4.7.0', folder: 'index_min', timestamp: pass }
+        : url.endsWith('/items.json')
+          ? pass === 1 ? { '100': { name: '기존 재료' } }
+            : { '100': { name: '수정 재료' }, '200': { name: '신규 재료' } }
+          : { sample: { id: 'sample' } };
+      return { ok: true, status: 200, text: async () => JSON.stringify(data) };
+    };
+    const first = await syncGameData(root, () => {}, sourceWithChanges);
+    assert.equal(first.changes.status, 'initial');
+    pass = 2;
+    const second = await syncGameData(root, () => {}, sourceWithChanges);
+    assert.equal(second.changes.status, 'changed');
+    assert.equal(second.changes.totals.added, 1);
+    assert.equal(second.changes.totals.modified, 1);
+    assert.equal(second.changes.totals.changedTables, 1);
+    const current = await readLatestGameChangeReport(root);
+    assert.equal(current.status, 'changed');
+    assert.equal(current.tables.find(t => t.filename === 'items.json').modified, 1);
+    pass = 3;
+    await assert.rejects(() => syncGameData(root, () => {}, sourceWithChanges), /Download failed: 404/);
+    const retained = await readLatestGameChangeReport(root);
+    assert.deepEqual(retained, current);
+    const path = join(root, '.local-data', 'game', '4.7.0', 'kr', 'items.json');
+    const items = JSON.parse(await readFile(path, 'utf8'));
+    assert.equal(items['100'].name, '수정 재료');
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
