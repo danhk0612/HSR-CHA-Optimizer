@@ -48,6 +48,31 @@ test('desktop launches with no user data and shows game version after independen
   }
 });
 
+test('desktop shows latest public game data changes before importing an account', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'hsr-changes-ui-'));
+  try {
+    await prepareGame(root);
+    const first = await getDesktopState(root);
+    assert.equal(first.accountReady, false);
+    assert.equal(first.gameChanges, null);
+    const directory = join(root, '.local-data', 'game', 'changes');
+    await mkdir(directory, { recursive: true });
+    await writeFile(join(directory, 'latest.json'), JSON.stringify({
+      status: 'changed', previous: { version: '4.7.0', language: 'kr' },
+      current: { version: '4.7.0', language: 'kr' },
+      totals: { added: 1, removed: 0, modified: 1, changedTables: 1 },
+      tables: [{ filename: 'items.json', previousCount: 2, currentCount: 3,
+        added: 1, removed: 0, modified: 1 }],
+    }));
+    const next = await getDesktopState(root);
+    assert.equal(next.ready, false);
+    assert.equal(next.gameChanges.totals.added, 1);
+    assert.equal(next.gameChanges.tables[0].filename, 'items.json');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('desktop imports actual v4-compatible file, labels Trailblazer and excludes UID from AI exports', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hsr-desktop-import-'));
   try {
