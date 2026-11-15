@@ -10,6 +10,8 @@ const INDEX_FILES = [
   'light_cones.json', 'light_cone_ranks.json', 'light_cone_promotions.json',
   'relics.json', 'relic_sets.json', 'relic_main_affixes.json',
   'relic_sub_affixes.json', 'items.json',
+  'simulated_blessings.json', 'simulated_curios.json',
+  'simulated_events.json', 'simulated_blocks.json',
 ];
 
 async function fetchJson(url, fetchImpl) {
