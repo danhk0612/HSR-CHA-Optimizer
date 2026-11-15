@@ -68,6 +68,8 @@ test('same-version comparison reads existing snapshot and keeps history separate
     assert.deepEqual(result.totals, { added: 1, removed: 1, modified: 1, changedTables: 1 });
     await saveGameChangeReport(game, result);
     const latest = await readLatestGameChangeReport(root);
+    const historical = JSON.parse(await readFile(join(game, 'changes', '2026-11-15T12-00-00-000Z.json'), 'utf8'));
+    assert.deepEqual(historical, latest);
     assert.equal(latest.current.version, '4.7.0');
     assert.equal(latest.tables[0].filename, 'items.json');
     const old = JSON.parse(await readFile(join(oldDir, 'items.json'), 'utf8'));
