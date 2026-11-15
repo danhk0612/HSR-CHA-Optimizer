@@ -28,8 +28,8 @@ light_cone_ranks.json
 light_cone_promotions.json
 relics.json
 relic_sets.json
-relic_main_affixs.json
-relic_sub_affixs.json
+relic_main_affixes.json
+relic_sub_affixes.json
 items.json
 ```
 
