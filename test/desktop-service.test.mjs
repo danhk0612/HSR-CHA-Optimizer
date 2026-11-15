@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, saveWarpPool, clearWarpPool, buildFullAccountForDesktop, buildFullAccountFolder, saveAccountAnalysisPreferences } from '../src/desktop-service.mjs';
+import { getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, saveWarpPool, clearWarpPool, buildFullAccountForDesktop, buildFullAccountFolder, saveAccountAnalysisPreferences, getInventoryCatalog, exportSelectedInventory } from '../src/desktop-service.mjs';
 import { importAccountArchive } from '../src/account-import.mjs';
 
 const files = [
@@ -161,6 +161,29 @@ test('desktop imports actual v4-compatible file, labels Trailblazer and excludes
       .reduce((n, f) => n + f.records, 0), 3);
     assert.equal((await getDesktopState(root)).analysisPreferences.text,
       '여성 캐릭터만 사용. 성옥 보존.');
+    const inventory = await getInventoryCatalog(root);
+    assert.equal(inventory.counts.characters, 2);
+    assert.equal(inventory.counts.relics, 3);
+    assert.equal(inventory.counts.ornaments, 0);
+    const selected = await exportSelectedInventory(root, {
+      keys: ['character:1', 'relic:0'], format: 'json',
+      includeSupplemental: true, sortBy: 'level', descending: true,
+    });
+    const selectedParsed = JSON.parse(selected.text);
+    assert.equal(selectedParsed.characters.length, 1);
+    assert.equal(selectedParsed.relics.length, 1);
+    assert.equal(selectedParsed.relics[0].equippedCharacterName, '아케론');
+    assert.equal(selectedParsed.selection.counts.relics, 1);
+    assert.equal(selectedParsed.selection.availableCounts.relics, 3);
+    assert.equal(selectedParsed.selection.descending, true);
+    assert.ok(!selected.text.includes('123456789'));
+    const readable = await exportSelectedInventory(root, {
+      keys: ['character:1', 'relic:0'], format: 'html',
+      includeSupplemental: true,
+    });
+    assert.match(readable.text, /<table>/);
+    assert.match(readable.text, /아케론/);
+    assert.match(readable.text, /개인 분석 조건/);
 
     await saveManualSheet(root, '1308', { hp: 3500, spd: 143.5, crit_dmg: 180.2 });
     const publicFile = join(root, 'mihomo.json');
