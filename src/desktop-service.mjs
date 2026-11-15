@@ -30,7 +30,7 @@ export async function getDesktopState(root) {
   }
   if (!gameReady || !accountReady) return empty;
   const data = await loadAccountData(root);
-  const sheet = await readCharacterStats(root);
+  const sheet = await readCharacterStats(root, data.scanner);
   return {
     ...empty,
     ready: true,
@@ -53,7 +53,7 @@ export async function getDesktopState(root) {
 
 export async function exportDesktopReport(root, request) {
   const data = await loadAccountData(root);
-  const sheet = await readCharacterStats(root);
+  const sheet = await readCharacterStats(root, data.scanner);
   const report = buildAiReport(data.scanner, data.tables, data.manifest, {
     characterIds: request.characterIds,
     candidateMode: request.candidateMode ?? 'none',
