@@ -1,4 +1,5 @@
 import { createRelicIndex, enrichRelic } from './relic-stats.mjs';
+import { filterCandidateRelics } from './relic-filters.mjs';
 
 // Read-only AI hand-off: use original account values and Korean game definitions.
 // Do not simulate in-game final stats or score relics.
@@ -135,12 +136,14 @@ function selectCandidates(scanner, tables, wanted, options, relicIndex) {
       mode === 'all' && !setIds.size || setIds.has(String(item.set_id))
     )
   );
-  const limit = options.candidateLimit ?? filtered.length;
+  const { relics: matches, filters } = filterCandidateRelics(filtered, options.candidateFilters);
+  const limit = options.candidateLimit ?? matches.length;
   if (!Number.isInteger(limit) || limit < 0) throw new Error('후보 개수는 0 이상의 정수여야 합니다.');
   return {
-    mode, setIds: [...setIds], matching: filtered.length,
-    included: Math.min(limit, filtered.length),
-    relics: filtered.slice(0, limit).map(item => compactRelic(item, tables, relicIndex)),
+    mode, setIds: [...setIds], filters, substatFilterScope: 'rolled-only',
+    matching: matches.length,
+    included: Math.min(limit, matches.length),
+    relics: matches.slice(0, limit).map(item => compactRelic(item, tables, relicIndex)),
   };
 }
 
