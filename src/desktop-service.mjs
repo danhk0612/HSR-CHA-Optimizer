@@ -4,6 +4,7 @@ import { loadAccountData } from './account-files.mjs';
 import { buildAiReport, toAiMarkdown, resolveCharacterName } from './ai-report.mjs';
 import { buildCandidateFilterOptions } from './relic-filters.mjs';
 import { exportPublicData } from './public-data-files.mjs';
+import { readLatestGameChangeReport } from './game-changes.mjs';
 import { readCharacterStats, getCharacterStatsSummary, MANUAL_STAT_FIELDS,
   saveManualCharacterStats, clearManualCharacterStats, importMihomoParsed } from './character-stats.mjs';
 
@@ -18,6 +19,7 @@ export async function getDesktopState(root) {
   const empty = {
     ready: false, gameReady, accountReady,
     version: null, importedAt: null,
+    gameChanges: null,
     characters: [], lightCones: 0, relics: 0, unequippedRelics: null,
     candidateFilterOptions: { sets: [], slots: [], mainstats: [], substats: [] },
     characterStatFields: MANUAL_STAT_FIELDS,
@@ -28,6 +30,7 @@ export async function getDesktopState(root) {
     const current = JSON.parse(await readFile(join(base, 'game', 'current.json'), 'utf8'));
     empty.version = current.version ?? null;
   }
+  if (gameReady) empty.gameChanges = await readLatestGameChangeReport(root);
   if (!gameReady || !accountReady) return empty;
   const data = await loadAccountData(root);
   const sheet = await readCharacterStats(root, data.scanner);
