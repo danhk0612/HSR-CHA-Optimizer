@@ -44,3 +44,29 @@ test('only checked category selections are collected for output with per-tab ord
     assert.ok(html.includes('id="' + required + '"'), required + ' is missing');
   }
 });
+
+test('packaged Electron smoke verifies actual tab interactions, not only presence of controls', () => {
+  const inlineScripts = [...desktop.matchAll(/executeJavaScript\(`([\s\S]*?)`\)/g)]
+    .map(match => match[1]);
+  assert.equal(inlineScripts.length, 2);
+  for (const script of inlineScripts) {
+    assert.doesNotThrow(() => new Function('return ' + script));
+  }
+  const interaction = inlineScripts[1];
+  for (const expected of [
+    "field('characters', 'query')",
+    "field('lightCones', 'query')",
+    "switchTab('lightCones')",
+    "field('relics', 'statKey')",
+    "field('ornaments', 'statKey')",
+    "act('materials', 'selectFiltered')",
+    "act('materials', 'next')",
+    "document.getElementById('previewExport').click()",
+    "document.getElementById('saveExport').click()",
+  ]) {
+    assert.ok(interaction.includes(expected), 'GUI action is missing from smoke: ' + expected);
+  }
+  assert.match(desktop, /ipcMain\.handle\('hsr:inventory-catalog'/);
+  assert.match(desktop, /const savedFile = join\(smokeRoot, 'selected-items.json'\)/);
+  assert.match(desktop, /savedRequest\.keys\.length !== 60/);
+});
