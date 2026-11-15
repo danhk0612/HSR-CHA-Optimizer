@@ -54,6 +54,19 @@ items.json
 - 계정에 스캔되지 않은 캐릭터나 장비를 '미보유'로 추론하지 않음.
 - Windows에서 실제 게임 스캔 파일 입력 및 스캐너 업데이트와의 호환성 검증이 필요.
 
+### Reliquary Archiver (주력 개인 데이터 입력)
+
+- 공식 GitHub: https://github.com/IceDynamix/reliquary-archiver
+- 소스 모델: `src/export/fribbels/models.rs`, `src/export/fribbels/exporter.rs`
+- 확인된 출력: `source="reliquary_archiver"`, `version=4`.
+- `characters`, `light_cones`, `relics` 구조는 기존 Fribbels/Kel-Z 계열과 호환되며 장비 `id`, `set_id`, `location`으로 연결.
+- `gacha`에 `stellar_jade`, `oneric_shards` 수치가 포함될 수 있고, `materials` 배열에는 재료 ID·이름·수량이 포함됨.
+- 정적 JSON의 `gacha` 정보에 천장 스택/확정 플래그가 존재한다고 가정하지 않음. 실시간 WebSocket 이벤트는 현재 범위에서 제외.
+- 한국어 화면에서 OCR이 필요하지 않지만, 게임 패킷을 읽는 비공식 도구이므로 사용 위험이 존재. 공개 검색에서 도구 자체로 인한 확인된 제재 보고는 찾지 못했으나 공식 안전 보증은 없음.
+- 프로젝트는 Archiver 바이너리/패킷 캡처 기능을 내장하지 않으며, 사용자가 수동 저장한 JSON 파일만 읽음.
+- 기존 HSR-Scanner 가져오기 기능은 대체 소스로 유지.
+- 실제 Archiver JSON 파일을 통한 Windows 통합 테스트는 아직 수행하지 않음.
+
 ## 출력 데이터 원칙
 
 - 게임 버전, 언어, 출처, 수집 시각 기록.
