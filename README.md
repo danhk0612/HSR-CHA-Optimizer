@@ -26,6 +26,8 @@
 - [x] 0.1.4 오프라인 MiHoMo Parsed JSON·수동 능력치 보완 및 한국어 20종 동기화 (Windows 44/44 통과)
 - [x] 0.1.5 동기화 전후 게임 데이터의 추가·삭제·내용 변경 비교·로컬 이력 기록/GUI 표시 (Windows 검증 대기)
 - [x] 시뮬레이션 우주 한국어 4종 확장 (총 20종) 및 GUI 공개 자료 검색/내보내기
+- [x] 0.1.5 Windows 50건 단위 테스트·게임 데이터 변경 없음·EXE 빌드/실행 성공
+- [x] 0.1.6 화면 능력치 vs MiHoMo 계산값 비교·워프 6종 수동 기록 (Windows 검증 대기)
 - [ ] 공개 전시 기반 최종 능력치 부분 수집 검토 (전체 보유 계정은 대체 불가)
 - [x] AI용 간결 출력·미장착 유물 후보 선택·재료 한국어화 (실제 파일 기반 통합 검증)
 
@@ -90,7 +92,7 @@ npm install --no-audit --no-fund
 npm run verify:local-win
 ```
 
-예상 산출물: `dist/HSR-CHA-Optimizer-0.1.5-portable.exe`. 0.1.4는 Windows에서 44건 테스트·게임 데이터 20종 동기화·실제 계정 검증·EXE 빌드 및 Electron 실행 검사에 통과했습니다. 0.1.5는 동기화 변경 내역 비교·이력 및 화면 표시 기능을 추가했으므로 새 통합 검증이 필요합니다. `verify:local-win`은 기존 `.local-data`의 실제 계정 검증까지 포함합니다. 일반 CI에서 사용하는 `verify:win`은 개인정보 파일이 필요하지 않습니다.
+예상 산출물: `dist/HSR-CHA-Optimizer-0.1.6-portable.exe`. 0.1.5는 Windows에서 50건 테스트·20종 변경 없음 확인·실제 계정 검증·EXE 빌드 및 Electron 실행 검사를 통과했습니다. 0.1.6은 수동 능력치 비교와 워프 수동 기록을 추가했으므로 통합 검증이 필요합니다. `verify:local-win`은 기존 `.local-data`의 실제 계정 검증까지 포함합니다. 일반 CI에서 사용하는 `verify:win`은 개인정보 파일이 필요하지 않습니다.
 
 첫 실행 시 프로그램에서 **게임 데이터 동기화 → 계정 JSON 가져오기**를 누르면 됩니다. 개발용 `npm run desktop`은 기존 `.local-data`를 재사용하며, 패키징한 EXE는 Windows 사용자 데이터 폴더에 따로 저장합니다. 개인 자료는 EXE에 포함되지 않습니다.
 
@@ -121,7 +123,7 @@ npm run verify:local-win
 **현재 데이터가 이미 준비되어 있다면 다시 스캔하거나 `npm run sync`를 실행할 필요가 없습니다.**
 
 ```powershell
-# 테스트 50건 + 실제 로컬 계정의 통합 출력 검증
+# 테스트 58건 + 실제 로컬 계정의 통합 출력 검증
 npm run verify
 
 # 로컬 브라우저 화면 실행 (Ctrl+C로 종료)
@@ -129,7 +131,7 @@ npm run gui
 # 브라우저에서 http://127.0.0.1:8765 접속
 ```
 
-`npm run gui`는 기존 로컬 브라우저 화면(127.0.0.1)입니다. `npm run desktop`은 Electron 창이며, `npm run dist:win`으로 Windows Portable EXE를 빌드하도록 구성했습니다. 0.1.3까지 Windows 빌드 검증을 완료했습니다. 캐릭터 다중 선택, 검색, 유물 후보 세부 필터·최대 개수, 재료 포함 여부, Markdown/JSON 미리보기·복사·저장을 지원합니다.
+`npm run gui`는 기존 로컬 브라우저 화면(127.0.0.1)입니다. `npm run desktop`은 Electron 창이며, `npm run dist:win`으로 Windows Portable EXE를 빌드하도록 구성했습니다. 0.1.5까지 Windows 빌드 검증을 완료했습니다. 캐릭터 다중 선택, 검색, 유물 후보 세부 필터·최대 개수, 재료 포함 여부, Markdown/JSON 미리보기·복사·저장을 지원합니다.
 
 CLI만 사용할 때:
 
