@@ -6,6 +6,7 @@ import { buildCandidateFilterOptions } from './relic-filters.mjs';
 import { exportPublicData } from './public-data-files.mjs';
 import { readEnemyIndex, syncEnemyData } from './enemy-files.mjs';
 import { buildFullAccountReport, buildFullAccountBundle } from './full-account-export.mjs';
+import { buildInventoryCatalog, selectInventoryForExport, formatSelectedInventory } from './inventory-explorer.mjs';
 import { readAnalysisPreferences, saveAnalysisPreferences } from './analysis-preferences.mjs';
 import { readLatestGameChangeReport } from './game-changes.mjs';
 import { compareCharacterSheet } from './stat-comparison.mjs';
@@ -150,4 +151,14 @@ export async function buildFullAccountFolder(root) {
 export async function saveAccountAnalysisPreferences(root, text) {
   const { scanner } = await loadAccountData(root);
   return saveAnalysisPreferences(root, scanner, text);
+}
+
+export async function getInventoryCatalog(root) {
+  return buildInventoryCatalog(await buildFullAccountForDesktop(root));
+}
+
+export async function exportSelectedInventory(root, request) {
+  const report = await buildFullAccountForDesktop(root);
+  const selected = selectInventoryForExport(report, request);
+  return formatSelectedInventory(selected, request.format);
 }
