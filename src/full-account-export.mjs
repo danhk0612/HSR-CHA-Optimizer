@@ -36,6 +36,7 @@ function makeRoster(scanner, tables) {
       name: resolveCharacterName(owned, tables),
       game: ref ? {
         name: resolveCharacterName(owned, tables),
+        rarity: Number.isInteger(ref.rarity) ? ref.rarity : null,
         path: ref.path ?? null,
         pathName: tables.paths?.[ref.path]?.name ?? null,
         element: ref.element ?? null,
@@ -73,6 +74,7 @@ function exportCones(scanner, tables, idToEntries) {
     return {
       key, scanIndex: index, inventoryId: item._uid ?? null,
       id, name: definition?.name ?? item.name ?? null,
+      rarity: Number.isInteger(definition?.rarity) ? definition.rarity : null,
       path: definition?.path ?? null,
       equippedBy: equipped,
       raw: withoutAccountIdentity(item),
