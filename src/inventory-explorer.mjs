@@ -171,11 +171,13 @@ export function selectInventoryForExport(report, request) {
   const selectedRows = exportOrder.filter(row => selected.has(row.key));
   const selectedCharacters = choose(report.characters);
   const selectedCones = choose(report.lightCones);
-  const selectedRelics = choose(report.relics);
+  const relicGroup = relic => ORNAMENT_SLOTS.has(relic.raw?.slot) ? 'ornaments' : 'relics';
+  const selectedRelics = choose(report.relics.filter(relic => relicGroup(relic) === 'relics'));
+  const selectedOrnaments = choose(report.relics.filter(relic => relicGroup(relic) === 'ornaments'));
   const selectedMaterials = choose(report.resources.materials ?? []);
   const selectedCharIds = new Set(selectedCharacters.map(c => String(c.id)));
   const selectedConeIds = new Set(selectedCones.map(c => String(c.id)));
-  const selectedSetIds = new Set(selectedRelics.map(r => String(r.setId)));
+  const selectedSetIds = new Set([...selectedRelics, ...selectedOrnaments].map(r => String(r.setId)));
   const ownerNames = Object.fromEntries(report.characters.map(c => [String(c.id), c.name]));
   const withOwner = x => ({
     ...x,
@@ -209,6 +211,7 @@ export function selectInventoryForExport(report, request) {
     characters: selectedCharacters,
     lightCones: selectedCones.map(withOwner),
     relics: selectedRelics.map(withOwner),
+    ornaments: selectedOrnaments.map(withOwner),
     ... (Object.keys(resources).length ? { resources } : {}),
     ... (supplemental ? { supplemental } : {}),
     ... (reference ? { reference } : {}),
@@ -241,7 +244,7 @@ function humanRows(report) {
       ' / 잠금 ' + (c.raw.lock === true ? '예' : '아니오') +
       ' / ' + (c.pathName ?? c.path ?? '-'),
   });
-  for (const r of report.relics) list.push({
+  for (const r of [...report.relics, ...(report.ornaments ?? [])]) list.push({
     group: ORNAMENT_SLOTS.has(r.raw.slot) ? 'ornaments' : 'relics',
     name: r.setName ?? r.raw.name ?? r.setId, rarity: r.raw.rarity, level: r.raw.level,
     detail: '부위 ' + r.raw.slot + ' / 주옵션 ' +
