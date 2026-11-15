@@ -27,7 +27,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
   app.whenReady().then(async () => {
     // Development reuses existing local CLI files; packaged EXE uses private user storage.
     const userRoot = smokeRoot ?? (app.isPackaged ? app.getPath('userData') : process.cwd());
-    const [{ getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase }, { importAccountArchive }, { syncGameData }] =
+    const [{ getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, exportPublicInfo }, { importAccountArchive }, { syncGameData }] =
       await Promise.all([
         import('./desktop-service.mjs'),
         import('./account-import.mjs'),
@@ -56,6 +56,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
     let syncing = false;
     ipcMain.handle('hsr:state', () => getDesktopState(userRoot));
     ipcMain.handle('hsr:export', (_, args) => exportDesktopReport(userRoot, args));
+    ipcMain.handle('hsr:public-export', (_, request) => exportPublicInfo(userRoot, request));
     ipcMain.handle('hsr:manual-save', (_, { id, values }) => saveManualSheet(userRoot, id, values));
     ipcMain.handle('hsr:manual-clear', (_, id) => clearManualSheet(userRoot, id));
     ipcMain.handle('hsr:showcase-import', async () => {
@@ -113,6 +114,8 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
             importButton: !!document.getElementById('importArchive'),
             manualSheetControls: ['manualStatCharacter','manualSheetSave','manualSheetClear',
               'importShowcase'].every(id => !!document.getElementById(id)),
+            publicControls: ['publicType','publicSearch','publicGenerate','publicResult']
+              .every(id => !!document.getElementById(id)),
             exportButton: !!document.getElementById('generate'),
             candidateFilterControls: ['candidateFilterArea', 'candidateSetChoices',
               'candidateSlotChoices', 'candidateMainChoices', 'candidateSubChoices']
