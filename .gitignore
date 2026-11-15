@@ -18,3 +18,10 @@ coverage/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Previously generated personal exports in the project root
+archive_output-*.json
+acheron*.json
+acheron*.md
+hsr-ai-export.json
+hsr-ai-export.md
