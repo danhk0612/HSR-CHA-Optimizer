@@ -14,7 +14,7 @@ export async function getDesktopState(root) {
   const empty = {
     ready: false, gameReady, accountReady,
     version: null, importedAt: null,
-    characters: [], lightCones: 0, relics: 0,
+    characters: [], lightCones: 0, relics: 0, unequippedRelics: null,
   };
   if (gameReady) {
     const current = JSON.parse(await readFile(join(base, 'game', 'current.json'), 'utf8'));
@@ -35,6 +35,7 @@ export async function getDesktopState(root) {
     })).sort((a, b) => a.name.localeCompare(b.name, 'ko')),
     lightCones: data.scanner.light_cones?.length ?? 0,
     relics: data.scanner.relics?.length ?? 0,
+    unequippedRelics: data.scanner.relics?.filter(item => !item.location).length ?? null,
   };
 }
 
@@ -45,6 +46,7 @@ export async function exportDesktopReport(root, request) {
     candidateMode: request.candidateMode ?? 'none',
     candidateSetIds: request.candidateSetIds ?? [],
     minRarity: request.minRarity ?? 0,
+    candidateLimit: request.candidateLimit,
     includeResources: request.includeResources === true,
     importedAt: data.imported.importedAt,
   });
