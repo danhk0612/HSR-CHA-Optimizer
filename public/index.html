@@ -1175,8 +1175,8 @@ async function loadInventoryExplorer() {
       })();
     inventoryCatalog = catalog;
     inventoryRows = catalog.rows;
-    inventorySelected = new Set([...inventorySelected].filter(key =>
-      inventoryRows.some(row => row.key === key)));
+    const availableKeys = new Set(inventoryRows.map(row => row.key));
+    inventorySelected = new Set([...inventorySelected].filter(key => availableKeys.has(key)));
     invBuildChoices(); invDraw();
     status.textContent = '스캔된 계정 자료만 표시합니다. 기존 저장된 원본은 변경하지 않습니다.';
   } catch (error) {
