@@ -21,9 +21,9 @@ npm run verify:local-win
 
 완료되면 아래 파일이 생성됩니다.
 
-`dist/HSR-CHA-Optimizer-0.1.2-portable.exe`
+`dist/HSR-CHA-Optimizer-0.1.3-portable.exe`
 
-**0.1.1은 사용자 Windows 11에서 테스트 22건 통과, EXE 생성 및 동기화·가져오기·내보내기·저장 실사용 확인까지 완료했습니다.** 0.1.2의 `verify:local-win`은 26건 단위 테스트 → 개인 PC에 저장된 실계정 통합 검증 → 새 EXE 빌드 → 숨겨진 Electron GUI 실행 확인을 순서대로 수행합니다. GitHub Actions에서는 개인 파일을 읽지 않는 `verify:win`을 사용합니다. 원본 게임 데이터와 계정 자료는 그대로 유지됩니다.
+**0.1.2는 사용자 Windows 11에서 테스트 26건 통과, 실제 계정 유물 6/6 연결 및 EXE 생성·실행 확인까지 완료했습니다.** 0.1.3의 `verify:local-win`은 33건 단위 테스트 → 개인 PC에 저장된 실계정 필터 조합 검증 → 새 EXE 빌드 → 숨겨진 Electron GUI 실행 확인을 순서대로 수행합니다. GitHub Actions에서는 개인 파일을 읽지 않는 `verify:win`을 사용합니다. 원본 게임 데이터와 계정 자료는 그대로 유지됩니다.
 
 개발 상태의 Electron 창을 열려면 `npm run desktop` 을 사용합니다. 이때는 프로젝트의 기존 `.local-data/` 파일을 그대로 사용하므로 기존 데이터 재수집이 필요 없습니다.
 
@@ -54,7 +54,8 @@ Portable EXE를 실행하면 자체 Windows 창이 열립니다.
 
 ## 현재 남은 작업
 
-- Windows 0.1.1 EXE 재빌드 및 자동 GUI 실행 확인 (`npm run verify:win`)
+- Windows 0.1.3 EXE 빌드 및 필터 GUI 실제 실행 확인 (`npm run verify:local-win`)
+- 후보 필터는 세트·부위·주옵션·현재 부옵션을 AND/OR 조합해서 적용하며, 후보 개수 제한은 필터 적용 후에 적용
 - **별도 프로그램 아이콘 SVG 적용됨** (`build/icon.svg`, electron-builder 변환); 미서명 EXE 유지
 - 설치형 배포는 현재 범위에서 제외 (Portable 우선)
 - 공개 전시 기반 일부 캐릭터의 실제 최종 능력치 도입 여부와 데이터 출처 검증 (docs/FINAL_STATS.md)
