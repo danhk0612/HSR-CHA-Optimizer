@@ -76,6 +76,7 @@ function exportCones(scanner, tables, idToEntries) {
       id, name: definition?.name ?? item.name ?? null,
       rarity: Number.isInteger(definition?.rarity) ? definition.rarity : null,
       path: definition?.path ?? null,
+      pathName: tables.paths?.[definition?.path]?.name ?? null,
       equippedBy: equipped,
       raw: withoutAccountIdentity(item),
     };
