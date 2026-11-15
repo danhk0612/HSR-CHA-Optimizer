@@ -16,14 +16,16 @@
 - [x] 요구사항 및 개발 단계 정리
 - [x] StarRailRes 한국어 데이터 동기화 CLI 초안
 - [x] 단일 캐릭터 공개 데이터 Markdown/JSON 내보내기 CLI 초안
-- [x] 로컬 브라우저 GUI 시제품 (Node.js, EXE 패키징 전)
+- [x] 로컬 브라우저 GUI 및 Electron 독립형 창 연결 (Windows 실행 검증 전)
 - [x] Reliquary Archiver 0.20.0 실제 JSON 가져오기·기존 전체 출력 검증
-- [ ] UID 공개 전시 연동 및 독립형 Windows EXE 패키징
+- [x] Windows Portable EXE 빌드 설정·첫 실행 데이터 동기화/가져오기 GUI 반영
+- [ ] Windows 실제 Portable EXE 빌드·실행 검증
+- [ ] 공개 전시 기반 최종 능력치 부분 수집 검토 (전체 보유 계정은 대체 불가)
 - [x] AI용 간결 출력·미장착 유물 후보 선택·재료 한국어화 (실제 파일 기반 통합 검증)
 
 ### 개발용 실행
 
-Node.js **20 이상**을 준비하고 저장소 루트에서 실행합니다. 외부 npm 의존성은 없습니다.
+기존 CLI는 Node.js **20 이상**에서 별도 설치 라이브러리 없이 실행할 수 있습니다. Electron GUI 개발·EXE 빌드에는 `npm install`로 개발 의존성을 설치합니다.
 
 ```powershell
 npm run sync
@@ -73,12 +75,28 @@ npm test
 
 **주의:** Reliquary Archiver는 비공식 게임 네트워크 패킷 분석 도구입니다. 직접적인 사용 제재 사례는 공개 검색에서 확인하지 못했지만, HoYoverse의 공식 허가 또는 제재 면책이 있는 것은 아닙니다. 개인 사용도 예외가 되지 않습니다. 이 프로젝트는 Archiver 실행을 자동화하거나 패킷을 직접 분석하지 않고, 사용자 동의 하에 추출된 JSON만 읽습니다.
 
+### Windows 독립형 실행 프로그램
+
+일반 브라우저와 Node.js 없이 GUI를 실행하는 **Electron Portable EXE** 빌드 구성을 추가했습니다.
+
+```powershell
+npm install --no-audit --no-fund
+npm test
+npm run dist:win
+```
+
+예상 산출물: `dist/HSR-CHA-Optimizer-0.1.0-portable.exe`. **아직 실제 Windows EXE 빌드 성공을 확인하지 않았습니다.**
+
+첫 실행 시 프로그램에서 **게임 데이터 동기화 → 계정 JSON 가져오기**를 누르면 됩니다. 개발용 `npm run desktop`은 기존 `.local-data`를 재사용하며, 패키징한 EXE는 Windows 사용자 데이터 폴더에 따로 저장합니다. 개인 자료는 EXE에 포함되지 않습니다.
+
+자세한 내용: [Windows EXE 빌드·첫 실행](docs/WINDOWS_EXE.md), [최종 능력치 확보 검토](docs/FINAL_STATS.md).
+
 ### AI용 간결 출력 및 로컬 화면
 
 **현재 데이터가 이미 준비되어 있다면 다시 스캔하거나 `npm run sync`를 실행할 필요가 없습니다.**
 
 ```powershell
-# 테스트 18건 + 실제 로컬 계정의 통합 출력 검증
+# 테스트 22건 + 실제 로컬 계정의 통합 출력 검증
 npm run verify
 
 # 로컬 브라우저 화면 실행 (Ctrl+C로 종료)
@@ -86,7 +104,7 @@ npm run gui
 # 브라우저에서 http://127.0.0.1:8765 접속
 ```
 
-GUI는 **Windows에서 실행하는 로컬 브라우저 기반 화면**이며 아직 독립형 EXE가 아닙니다. 127.0.0.1에만 바인딩하고 외부 계정/AI API에 자료를 보내지 않습니다. 캐릭터 다중 선택, 검색, 유물 후보 범위, 재료 포함 여부, Markdown/JSON 미리보기·복사·저장을 지원합니다.
+`npm run gui`는 기존 로컬 브라우저 화면(127.0.0.1)입니다. `npm run desktop`은 Electron 창이며, `npm run dist:win`으로 Windows Portable EXE를 빌드하도록 구성했습니다. 실제 Windows 빌드 검증은 남아 있습니다. 캐릭터 다중 선택, 검색, 유물 후보 범위, 재료 포함 여부, Markdown/JSON 미리보기·복사·저장을 지원합니다.
 
 CLI만 사용할 때:
 
@@ -116,6 +134,8 @@ node src/export-ai.mjs --character "아케론" --candidates all --json
 - [확정 요구사항](REQUIREMENTS.md)
 - [개발 계획](PLAN.md)
 - [데이터 소스/주의사항](docs/DATA_SOURCES.md)
+- [Windows Portable EXE 빌드](docs/WINDOWS_EXE.md)
+- [실제 최종 능력치 확보 검토](docs/FINAL_STATS.md)
 
 ## 저작권·주의사항
 
