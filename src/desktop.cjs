@@ -27,7 +27,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
   app.whenReady().then(async () => {
     // Development reuses existing local CLI files; packaged EXE uses private user storage.
     const userRoot = smokeRoot ?? (app.isPackaged ? app.getPath('userData') : process.cwd());
-    const [{ getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, exportPublicInfo }, { importAccountArchive }, { syncGameData }] =
+    const [{ getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, exportPublicInfo, saveWarpPool, clearWarpPool }, { importAccountArchive }, { syncGameData }] =
       await Promise.all([
         import('./desktop-service.mjs'),
         import('./account-import.mjs'),
@@ -57,6 +57,8 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
     ipcMain.handle('hsr:state', () => getDesktopState(userRoot));
     ipcMain.handle('hsr:export', (_, args) => exportDesktopReport(userRoot, args));
     ipcMain.handle('hsr:public-export', (_, request) => exportPublicInfo(userRoot, request));
+    ipcMain.handle('hsr:warp-save', (_, { name, input }) => saveWarpPool(userRoot, name, input));
+    ipcMain.handle('hsr:warp-clear', (_, name) => clearWarpPool(userRoot, name));
     ipcMain.handle('hsr:manual-save', (_, { id, values }) => saveManualSheet(userRoot, id, values));
     ipcMain.handle('hsr:manual-clear', (_, id) => clearManualSheet(userRoot, id));
     ipcMain.handle('hsr:showcase-import', async () => {
@@ -112,6 +114,8 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
             emptyState: state && state.ready === false,
             toolbar: document.getElementById('desktopToolbar').hidden === false,
             importButton: !!document.getElementById('importArchive'),
+            warpControls: ['warpPanel','warpType','warpPity','warpGuarantee','warpSave','warpClear']
+              .every(id => !!document.getElementById(id)),
             manualSheetControls: ['manualStatCharacter','manualSheetSave','manualSheetClear',
               'importShowcase'].every(id => !!document.getElementById(id)),
             publicControls: ['publicType','publicSearch','publicGenerate','publicResult']
