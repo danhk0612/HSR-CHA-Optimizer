@@ -55,9 +55,6 @@ if (!query) {
         ['행적', report.traces],
         ['승급/레벨', report.promotions],
       ];
-      const body = sections.map(([name, data]) => (
-        `## ${name}\n\n``
-      ));
       // Preserve original JSON in code blocks: placeholders such as #1[i]
       // and their params need to remain paired for accurate AI interpretation.
       const markdown = `# ${character.name} (${character.id})\n\n` +
