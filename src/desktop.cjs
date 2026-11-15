@@ -281,9 +281,14 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
             JSON.stringify(onDisk) !== JSON.stringify(savedRequest) ||
             savedRequest.keys.length !== 60 ||
             savedRequest.keys.filter(key => key.startsWith('material:')).length !== 55 ||
+            !savedRequest.keys.includes('relic:0') ||
+            !savedRequest.keys.includes('relic:1') ||
             savedRequest.orderKeys.slice(0, 2).join(',') !== 'character:0,character:1' ||
             savedRequest.orderKeys[2] !== 'lightCone:1' ||
-            previewRequest.keys.length !== savedRequest.keys.length) {
+            savedRequest.orderKeys[3] !== 'relic:0' ||
+            savedRequest.orderKeys[4] !== 'relic:1' ||
+            JSON.stringify(previewRequest.keys) !== JSON.stringify(savedRequest.keys) ||
+            JSON.stringify(previewRequest.orderKeys) !== JSON.stringify(savedRequest.orderKeys)) {
           throw new Error('IPC 선택 출력/파일 저장 검증 실패: ' +
             JSON.stringify({ preview: previewRequest?.keys?.length,
               saved: savedRequest?.keys?.length,
