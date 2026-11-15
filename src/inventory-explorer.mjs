@@ -162,7 +162,7 @@ export function selectInventoryForExport(report, request) {
     equippedCharacterName: ownerNames[String(x.equippedBy?.characterId)] ?? null,
   });
   const resources = {};
-  if (request.includeMaterials !== false) resources.materials = selectedMaterials;
+  if (selectedMaterials.length && request.includeMaterials !== false) resources.materials = selectedMaterials;
   if (request.includeGacha === true) resources.gacha = report.resources.gacha;
   if (request.includeWarp === true) resources.manualWarpPity = report.resources.manualWarpPity;
   const supplemental = request.includeSupplemental === true ? {
