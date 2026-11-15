@@ -7,10 +7,14 @@ const { tmpdir } = require('node:os');
 const smokeTest = process.argv.includes('--smoke-test');
 const realAccountSmoke = process.argv.includes('--smoke-real-account');
 const smokeMode = smokeTest || realAccountSmoke;
-const smokeRoot = smokeMode ? mkdtempSync(join(tmpdir(), 'hsr-cha-smoke-')) : null;
+const suppliedSmokeDir = process.argv.find(arg => arg.startsWith('--smoke-temp-dir='));
+const smokeRoot = smokeMode
+  ? (suppliedSmokeDir ? suppliedSmokeDir.slice('--smoke-temp-dir='.length)
+    : mkdtempSync(join(tmpdir(), 'hsr-cha-smoke-')))
+  : null;
 if (smokeRoot) {
   app.setPath('userData', smokeRoot);
-  app.on('quit', () => {
+  if (!suppliedSmokeDir) app.on('quit', () => {
     try { rmSync(smokeRoot, { recursive: true, force: true }); } catch {}
   });
 }
