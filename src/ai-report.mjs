@@ -173,8 +173,11 @@ export function buildAiReport(scanner, tables, manifest, options = {}) {
   const candidates = selectCandidates(scanner, tables, wanted, options, relicIndex);
   const observedCount = selectedCharacters.filter(c => c.characterSheet?.manualObserved).length;
   const showcaseCount = selectedCharacters.filter(c => c.characterSheet?.publicShowcaseCalculated).length;
+  const manuallyRecordedPools = options.manualWarpState?.pools ?? {};
+  const hasManualPity = Object.keys(manuallyRecordedPools).length > 0;
   const resources = options.includeResources ? {
     gacha: scanner.gacha ?? null,
+    ...(hasManualPity ? { manualWarpPity: manuallyRecordedPools } : {}),
     materials: (scanner.materials ?? []).map(item => ({
       id: String(item.id),
       name: tables.items?.[String(item.id)]?.name ?? item.name,
@@ -200,6 +203,8 @@ export function buildAiReport(scanner, tables, manifest, options = {}) {
         publicShowcaseCalculated: showcaseCount,
       },
       warpPityCollected: false,
+      warpPityManuallyRecorded: hasManualPity,
+      warpPityNote: '워프 천장과 확정 여부는 스캔 데이터에서 자동 수집하지 않습니다. 수동 기록값은 사용자가 입력한 현재 추정 상태로만 취급하며, 불명확한 보장 상태는 unknown으로 유지합니다.',
       relicMainStatNumbers: 'StarRailRes 유물 주옵션 기본값+강화 계수로 산출. 원본 수집기가 직접 관측한 값이 아니며, 원본 매칭이 불가능하면 null.',
       note: '게임 화면 수동 입력 수치는 관측값으로, Mihomo 공개 전시 JSON은 비공식 파싱 계산값으로 별도 표시합니다. 일부 캐릭터만 보완되었을 수 있으며, 부재한 캐릭터 능력치를 추정하지 않습니다. 유물 부옵션 value는 원본 그대로 유지합니다. 스킬 설명의 #1[i] 등은 원문 계수 표기입니다.',
     },
