@@ -138,11 +138,16 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 </section>
 <section class="panel public-editor" id="publicEditor">
 <h2>공개 게임 자료 검색</h2>
-<p>StarRailRes 한국어 데이터에 포함된 시뮬레이션 우주 자료를 검색합니다. 캐릭터 육성/계정 정보는 전송하지 않습니다. 이전 16종 데이터만 있다면 게임 데이터 동기화가 필요합니다.</p>
+<p>시뮬레이션 우주 자료는 기존 20종 데이터에서 검색합니다. 적·보스는 별도의 정식 4.7.0 원본을 선택해 내려받으며, 약점과 실제 전투 수치를 추정하지 않습니다.</p>
+<div class="actions" id="enemyPrepareArea" hidden>
+<button id="prepareEnemies" class="secondary" type="button">적·보스 데이터 별도 준비 (다운로드)</button>
+<span id="enemyDataStatus">적·보스 별도 자료 미준비</span>
+</div>
 <div class="row">
 <div><label for="publicType">자료 종류</label><select id="publicType">
 <option value="blessings">축복</option><option value="curios">기물</option>
-<option value="events">사건</option><option value="blocks">구역</option></select></div>
+<option value="events">사건</option><option value="blocks">구역</option>
+<option value="enemies">적·보스 (기초 데이터)</option></select></div>
 <div><label for="publicLimit">최대 개수 (1~200)</label><input id="publicLimit" type="number" min="1" max="200" step="1" value="20"></div>
 <div><label for="publicFormat">출력 형식</label><select id="publicFormat">
 <option value="json">JSON</option><option value="markdown">Markdown</option></select></div>
@@ -168,6 +173,7 @@ let publicOutput = '', publicOutputFormat = 'json';
 let sheetRecords = {}, sheetFields = {}, sheetComparisons = {};
 let warpPools = {}, warpRecords = {};
 el('warpPanel').hidden = !desktop;
+el('enemyPrepareArea').hidden = !desktop;
 
 function renderWarpPanel() {
   if (!desktop) return;
@@ -420,6 +426,13 @@ function render() {
 async function refreshState() {
   const state = desktop ? await desktop.getState() : await fetch('/api/state').then(r => r.json());
   renderGameChanges(state.gameChanges);
+  const enemy = state.enemyData;
+  if (desktop) {
+    el('enemyDataStatus').textContent = enemy?.prepared
+      ? '원본 4.7.0 · ' + enemy.total + '개 · 한국어 이름 ' +
+        enemy.nameResolved + '개 연결 / ' + enemy.nameUnresolved + '개 미확인'
+      : '적·보스 별도 자료 미준비';
+  }
   all = state.characters ?? [];
   sheetRecords = state.characterStats ?? {};
   sheetFields = state.characterStatFields ?? {};
@@ -459,6 +472,22 @@ for (const id of ['minRarity','candidateLimit','resources','format']) {
 }
 
 if (desktop) {
+  desktop.onEnemyProgress(p => {
+    el('enemyDataStatus').textContent =
+      '적·보스 원본 다운로드 ' + p.done + '/' + p.total + ': ' + p.filename;
+  });
+  el('prepareEnemies').addEventListener('click', async () => {
+    el('prepareEnemies').disabled = true;
+    el('enemyDataStatus').textContent = '적·보스 원본 다운로드 시작 (대용량 한국어 텍스트 포함)';
+    try {
+      const result = await desktop.prepareEnemies();
+      await refreshState();
+      el('publicMessage').textContent = '적·보스 자료 준비 완료: ' +
+        result.total + '개 / 한국어 이름 연결 ' + result.nameResolved + '개';
+    } catch (error) {
+      el('enemyDataStatus').textContent = '적·보스 자료 준비 실패: ' + error.message;
+    } finally { el('prepareEnemies').disabled = false; }
+  });
   el('warpType').addEventListener('change', renderWarpPanel);
   el('warpSave').addEventListener('click', async () => {
     const name = el('warpType').value;
