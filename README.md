@@ -164,7 +164,7 @@ npm run gui
 # 브라우저에서 http://127.0.0.1:8765 접속
 ```
 
-`npm run gui`는 기존 로컬 브라우저 화면(127.0.0.1)입니다. `npm run desktop`은 Electron 창이며, `npm run dist:win`으로 Windows Portable EXE를 빌드하도록 구성했습니다. 0.1.5까지 Windows 빌드 검증을 완료했습니다. 캐릭터 다중 선택, 검색, 유물 후보 세부 필터·최대 개수, 재료 포함 여부, Markdown/JSON 미리보기·복사·저장을 지원합니다.
+`npm run gui`는 기존 로컬 브라우저 화면(127.0.0.1)입니다. `npm run desktop`은 Electron 창이며, `npm run dist:win`으로 Windows Portable EXE를 빌드하도록 구성했습니다. 0.1.6까지 Windows 빌드 검증을 완료했습니다. 0.1.7은 사용자 PC의 한국어 적 이름 연결 결과(665/665)가 확인됐으며, 0.1.8은 통합 검증 전입니다. 캐릭터 다중 선택, 검색, 유물 후보 세부 필터·최대 개수, 재료 포함 여부, Markdown/JSON 미리보기·복사·저장을 지원합니다.
 
 CLI만 사용할 때:
 
