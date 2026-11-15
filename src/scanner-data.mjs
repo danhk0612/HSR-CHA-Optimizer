@@ -91,7 +91,7 @@ export function buildAccountReport(scanner, tables, manifest, options = {}) {
       lightConesScanned: Array.isArray(scanner.light_cones),
       relicsScanned: Array.isArray(scanner.relics),
       personalSheetStats: false,
-      resourcesAndWarpPity: false,
+      warpPityCollected: false,
       gachaFundsCollected: scanner.gacha !== undefined,
       materialsCollected: Array.isArray(scanner.materials),
       note: '스캐너 설정의 제외 조건·인식 오류에 따라 결과가 전체 보유량보다 적을 수 있습니다.',
