@@ -2,13 +2,13 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadAccountData } from './account-files.mjs';
-import { buildAiReport, toAiMarkdown } from './ai-report.mjs';
+import { buildAiReport, toAiMarkdown, resolveCharacterName } from './ai-report.mjs';
 
 // Local-only preview UI. No game process, remote server, or AI API access.
 const data = await loadAccountData();
 const html = await readFile(join(process.cwd(), 'public', 'index.html'), 'utf8');
 const characterList = data.scanner.characters.map(item => ({
-  id: String(item.id), name: data.tables.characters[String(item.id)]?.name ?? item.name,
+  id: String(item.id), name: resolveCharacterName(item, data.tables),
   level: item.level, eidolon: item.eidolon,
 })).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
