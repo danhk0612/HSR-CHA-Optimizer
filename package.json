@@ -16,6 +16,39 @@
     "export:ai": "node src/export-ai.mjs",
     "gui": "node src/gui.mjs",
     "test": "node --test",
-    "verify": "node --test && node src/verify.mjs"
+    "verify": "node --test && node src/verify.mjs",
+    "desktop": "electron .",
+    "dist:win": "electron-builder --win portable --x64"
+  },
+  "main": "src/desktop.cjs",
+  "devDependencies": {
+    "electron": "45.3.2",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "kr.dk.hsrchaoptimizer",
+    "productName": "HSR-CHA-Optimizer",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "public/**/*",
+      "package.json",
+      "!.local-data/**/*",
+      "!test/**/*"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "HSR-CHA-Optimizer-${version}-portable.${ext}"
+    }
   }
 }
