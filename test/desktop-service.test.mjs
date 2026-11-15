@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { getDesktopState, exportDesktopReport } from '../src/desktop-service.mjs';
+import { getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase } from '../src/desktop-service.mjs';
 import { importAccountArchive } from '../src/account-import.mjs';
 
 const files = [
@@ -99,6 +99,36 @@ test('desktop imports actual v4-compatible file, labels Trailblazer and excludes
       candidateFilters: { setIds: ['111'] },
     }));
     assert.equal(restricted.candidates.matching, 0);
+    await saveManualSheet(root, '1308', { hp: 3500, spd: 143.5, crit_dmg: 180.2 });
+    const publicFile = join(root, 'mihomo.json');
+    await writeFile(publicFile, JSON.stringify({
+      player: { uid: 123456789, nickname: 'DO NOT EXPORT' },
+      characters: [{ id: '1308', level: 80, rank: 1,
+        attributes: [{ field: 'hp', name: 'HP', value: 2500, percent: false }],
+        additions: [{ field: 'hp', name: 'HP', value: 1000, percent: false }],
+        properties: [] }],
+    }), 'utf8');
+    await importSavedShowcase(root, publicFile);
+    const updated = await getDesktopState(root);
+    assert.equal(updated.characterStatsSummary.manual, 1);
+    assert.equal(updated.characterStatsSummary.showcase, 1);
+    const enhancedOutput = await exportDesktopReport(root, {
+      characterIds: ['1308'], format: 'json',
+    });
+    const enhanced = JSON.parse(enhancedOutput);
+    assert.equal(enhanced.characters[0].characterSheet.manualObserved.values.spd, 143.5);
+    assert.equal(enhanced.characters[0].characterSheet.publicShowcaseCalculated.attributes[0].value, 2500);
+    assert.equal(enhanced.limitations.characterSheetStatsCollected, true);
+    assert.equal(enhanced.limitations.characterSheetCoverage.manuallyObserved, 1);
+    assert.ok(!enhancedOutput.includes('DO NOT EXPORT'));
+    assert.ok(!enhancedOutput.includes('123456789'));
+    await clearManualSheet(root, '1308');
+    const afterClear = JSON.parse(await exportDesktopReport(root, {
+      characterIds: ['1308'], format: 'json',
+    }));
+    assert.equal(afterClear.characters[0].characterSheet.manualObserved, undefined);
+    assert.ok(afterClear.characters[0].characterSheet.publicShowcaseCalculated);
+    assert.equal(afterClear.limitations.characterSheetStatsCollected, false);
     const saved = JSON.parse(await readFile(join(root, '.local-data', 'account', 'scanner.json'), 'utf8'));
     assert.equal(saved.metadata.uid, 123456789);
   } finally {
