@@ -319,7 +319,7 @@ export function selectedInventoryToHtml(report) {
     '<title>붕괴: 스타레일 — 계정 자료</title><style>' +
     'body{font-family:system-ui,Malgun Gothic,sans-serif;color:#162238;max-width:1080px;margin:36px auto;padding:0 22px;line-height:1.55}' +
     'h1{font-size:26px}h2{font-size:18px;margin-top:32px}small,p{color:#546078}' +
-    'table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:9px 11px;border-bottom:1px solid #d6dce5;vertical-align:top}' +
+    'table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:9px 11px;border-bottom:1px solid #d6dce5;vertical-align:top;overflow-wrap:anywhere}' +
     'th{background:#eff3f9}tr{break-inside:avoid}section{break-inside:auto}' +
     'pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f5fa;padding:14px;font-size:12px;border-radius:8px}' +
     '@media print{body{margin:0;padding:0}h2{break-after:avoid}}' +
