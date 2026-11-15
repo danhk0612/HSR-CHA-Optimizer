@@ -124,3 +124,51 @@ test('major trace descriptions distinguish unlocked from locked nodes', () => {
   const states = report.characters[0].majorTraceDefinitions.map(x => x.unlocked);
   assert.deepEqual(states, [true, false, false]);
 });
+
+test('combined candidate constraints are reflected in JSON and Markdown after existing modes', () => {
+  const expanded = { ...scanner, relics: [
+    ...scanner.relics,
+    { _uid: 16, set_id: '110', slot: 'Body', level: 15, rarity: 5,
+      mainstat: 'CRIT Rate', substats: [{ key: 'CRIT DMG_', value: 12.9 }], location: '' },
+    { _uid: 17, set_id: '314', slot: 'Feet', level: 15, rarity: 5,
+      mainstat: 'SPD', substats: [{ key: 'CRIT DMG_', value: 11.6 }], location: '' },
+  ] };
+  const constraints = {
+    setIds: ['110', '314'], slots: ['Feet', 'Body'],
+    mainstats: ['CRIT Rate'], substats: ['CRIT DMG_'],
+  };
+  const result = buildAiReport(expanded, tables, manifest, {
+    ...base, candidateMode: 'all', candidateFilters: constraints, candidateLimit: 1,
+  });
+  assert.deepEqual(result.candidates.relics.map(item => item.inventoryId), [16]);
+  assert.equal(result.candidates.matching, 1);
+  assert.equal(result.candidates.included, 1);
+  assert.deepEqual(result.candidates.filters, constraints);
+  assert.equal(result.candidates.substatFilterScope, 'rolled-only');
+  assert.ok(toAiMarkdown(result).includes('"substats"'));
+
+  const intersection = buildAiReport(expanded, tables, manifest, {
+    ...base, candidateMode: 'equipped-sets', candidateFilters: { setIds: ['314'] },
+  });
+  assert.equal(intersection.candidates.matching, 0);
+  assert.equal(intersection.candidates.included, 0);
+  assert.deepEqual(intersection.candidates.relics, []);
+});
+
+test('candidate filtering runs before existing output count limit', () => {
+  const expanded = { ...scanner, relics: [
+    ...scanner.relics,
+    { _uid: 18, set_id: '110', slot: 'Body', level: 0, rarity: 5, mainstat: 'CRIT Rate',
+      substats: [{ key: 'CRIT DMG_', value: 5 }], location: '' },
+    { _uid: 19, set_id: '110', slot: 'Body', level: 0, rarity: 5, mainstat: 'CRIT Rate',
+      substats: [{ key: 'CRIT Rate_', value: 3 }], location: '' },
+  ] };
+  const result = buildAiReport(expanded, tables, manifest, {
+    ...base, candidateMode: 'all', candidateFilters: {
+      slots: ['Body'], mainstats: ['CRIT Rate'],
+    }, candidateLimit: 1,
+  });
+  assert.equal(result.candidates.matching, 2);
+  assert.equal(result.candidates.included, 1);
+  assert.equal(result.candidates.relics.length, 1);
+});
