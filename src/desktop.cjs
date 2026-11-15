@@ -27,7 +27,7 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
   app.whenReady().then(async () => {
     // Development reuses existing local CLI files; packaged EXE uses private user storage.
     const userRoot = smokeRoot ?? (app.isPackaged ? app.getPath('userData') : process.cwd());
-    const [{ getDesktopState, exportDesktopReport }, { importAccountArchive }, { syncGameData }] =
+    const [{ getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase }, { importAccountArchive }, { syncGameData }] =
       await Promise.all([
         import('./desktop-service.mjs'),
         import('./account-import.mjs'),
@@ -56,6 +56,17 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
     let syncing = false;
     ipcMain.handle('hsr:state', () => getDesktopState(userRoot));
     ipcMain.handle('hsr:export', (_, args) => exportDesktopReport(userRoot, args));
+    ipcMain.handle('hsr:manual-save', (_, { id, values }) => saveManualSheet(userRoot, id, values));
+    ipcMain.handle('hsr:manual-clear', (_, id) => clearManualSheet(userRoot, id));
+    ipcMain.handle('hsr:showcase-import', async () => {
+      const choice = await dialog.showOpenDialog(win, {
+        title: '저장된 MiHoMo Parsed API JSON 파일 선택 (외부 전송 없음)',
+        properties: ['openFile'],
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+      });
+      if (choice.canceled || !choice.filePaths.length) return null;
+      return importSavedShowcase(userRoot, choice.filePaths[0]);
+    });
     ipcMain.handle('hsr:import', async () => {
       const choice = await dialog.showOpenDialog(win, {
         title: 'Reliquary Archiver / HSR-Scanner JSON 선택',
@@ -100,6 +111,8 @@ if (!smokeTest && !app.requestSingleInstanceLock()) {
             emptyState: state && state.ready === false,
             toolbar: document.getElementById('desktopToolbar').hidden === false,
             importButton: !!document.getElementById('importArchive'),
+            manualSheetControls: ['manualStatCharacter','manualSheetSave','manualSheetClear',
+              'importShowcase'].every(id => !!document.getElementById(id)),
             exportButton: !!document.getElementById('generate'),
             candidateFilterControls: ['candidateFilterArea', 'candidateSetChoices',
               'candidateSlotChoices', 'candidateMainChoices', 'candidateSubChoices']
