@@ -83,10 +83,10 @@ npm test
 
 ```powershell
 npm install --no-audit --no-fund
-npm run verify:win
+npm run verify:local-win
 ```
 
-예상 산출물: `dist/HSR-CHA-Optimizer-0.1.2-portable.exe`. 0.1.1은 Windows에서 빌드·실행·동기화·가져오기·저장까지 검증됐습니다. 0.1.2는 유물 숫자·한글 표시를 추가했으므로 새 통합 테스트 및 빌드 확인이 필요합니다.
+예상 산출물: `dist/HSR-CHA-Optimizer-0.1.2-portable.exe`. 0.1.1은 Windows에서 빌드·실행·동기화·가져오기·저장까지 검증됐습니다. 0.1.2는 유물 숫자·한글 표시를 추가했으므로 새 통합 테스트 및 빌드 확인이 필요합니다. `verify:local-win`은 기존 `.local-data`의 실제 계정 검증까지 포함합니다. 일반 CI에서 사용하는 `verify:win`은 개인정보 파일이 필요하지 않습니다.
 
 첫 실행 시 프로그램에서 **게임 데이터 동기화 → 계정 JSON 가져오기**를 누르면 됩니다. 개발용 `npm run desktop`은 기존 `.local-data`를 재사용하며, 패키징한 EXE는 Windows 사용자 데이터 폴더에 따로 저장합니다. 개인 자료는 EXE에 포함되지 않습니다.
 
