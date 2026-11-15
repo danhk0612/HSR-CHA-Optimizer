@@ -3,6 +3,7 @@ import { resolve, join } from 'node:path';
 import { loadAccountData } from './account-files.mjs';
 import { buildAiReport, toAiMarkdown, resolveCharacterName } from './ai-report.mjs';
 import { buildCandidateFilterOptions } from './relic-filters.mjs';
+import { exportPublicData } from './public-data-files.mjs';
 import { readCharacterStats, getCharacterStatsSummary, MANUAL_STAT_FIELDS,
   saveManualCharacterStats, clearManualCharacterStats, importMihomoParsed } from './character-stats.mjs';
 
@@ -83,4 +84,8 @@ export async function importSavedShowcase(root, inputPath) {
   const { scanner } = await loadAccountData(root);
   const parsed = JSON.parse(await readFile(inputPath, 'utf8'));
   return importMihomoParsed(root, scanner, parsed);
+}
+
+export async function exportPublicInfo(root, request) {
+  return exportPublicData(root, request);
 }
