@@ -19,7 +19,8 @@
 - [x] 로컬 브라우저 GUI 및 Electron 독립형 창 연결 (Windows 실행 검증 전)
 - [x] Reliquary Archiver 0.20.0 실제 JSON 가져오기·기존 전체 출력 검증
 - [x] Windows Portable EXE 빌드 설정·첫 실행 데이터 동기화/가져오기 GUI 반영
-- [ ] Windows 실제 Portable EXE 빌드·실행 검증
+- [x] Windows Portable EXE 0.1.0 빌드 성공 (사용자 로그: 약 110MB)
+- [ ] 0.1.1 버전 자체 아이콘 포함 EXE와 Electron GUI 실제 실행 검증
 - [ ] 공개 전시 기반 최종 능력치 부분 수집 검토 (전체 보유 계정은 대체 불가)
 - [x] AI용 간결 출력·미장착 유물 후보 선택·재료 한국어화 (실제 파일 기반 통합 검증)
 
@@ -81,11 +82,10 @@ npm test
 
 ```powershell
 npm install --no-audit --no-fund
-npm test
-npm run dist:win
+npm run verify:win
 ```
 
-예상 산출물: `dist/HSR-CHA-Optimizer-0.1.0-portable.exe`. **아직 실제 Windows EXE 빌드 성공을 확인하지 않았습니다.**
+예상 산출물: `dist/HSR-CHA-Optimizer-0.1.1-portable.exe`. 이전 0.1.0은 Windows에서 빌드 성공했으며, 이번 0.1.1은 아이콘 적용과 실제 Electron 렌더러/IPC 스모크 테스트 결과를 확인해야 합니다.
 
 첫 실행 시 프로그램에서 **게임 데이터 동기화 → 계정 JSON 가져오기**를 누르면 됩니다. 개발용 `npm run desktop`은 기존 `.local-data`를 재사용하며, 패키징한 EXE는 Windows 사용자 데이터 폴더에 따로 저장합니다. 개인 자료는 EXE에 포함되지 않습니다.
 
@@ -104,7 +104,7 @@ npm run gui
 # 브라우저에서 http://127.0.0.1:8765 접속
 ```
 
-`npm run gui`는 기존 로컬 브라우저 화면(127.0.0.1)입니다. `npm run desktop`은 Electron 창이며, `npm run dist:win`으로 Windows Portable EXE를 빌드하도록 구성했습니다. 실제 Windows 빌드 검증은 남아 있습니다. 캐릭터 다중 선택, 검색, 유물 후보 범위, 재료 포함 여부, Markdown/JSON 미리보기·복사·저장을 지원합니다.
+`npm run gui`는 기존 로컬 브라우저 화면(127.0.0.1)입니다. `npm run desktop`은 Electron 창이며, `npm run dist:win`으로 Windows Portable EXE를 빌드하도록 구성했습니다. 실제 Windows 빌드 검증은 남아 있습니다. 캐릭터 다중 선택, 검색, 유물 후보 범위 및 최대 개수, 재료 포함 여부, Markdown/JSON 미리보기·복사·저장을 지원합니다.
 
 CLI만 사용할 때:
 
@@ -126,7 +126,7 @@ node src/export-ai.mjs --character "아케론" --candidates all --json
 - 출력에 계정 UID는 포함되지 않습니다. 다만 장비 고유 식별자는 후보 식별을 위해 유지합니다.
 - **실제 최종 캐릭터 능력치**, 전투 중 버프 수치, 워프 천장/확정 상태는 확보되지 않았으며 계산값으로 대체하지 않습니다.
 - 개척자 이름은 원본 `{NICKNAME}` 대신 **개척자 (운명의 길 · 속성)**으로 표시합니다. 실제 계정 닉네임은 추측하지 않습니다. 주요 행적의 원본 설명에는 `unlocked` 상태를 함께 표시합니다.
-- 후보를 **미장착 유물 전체**로 설정하면 수천 개의 유물이 포함되어 수 MB 수준까지 커질 수 있습니다. AI에 전달할 때는 필요한 후보 범위만 선택하는 편이 효율적입니다.
+- 후보를 **미장착 유물 전체**로 설정하면 수천 개의 유물이 포함되어 수 MB 수준까지 커질 수 있습니다. AI에 전달할 때는 필요한 후보 범위만 선택하는 편이 효율적입니다. GUI의 **후보 최대 포함 개수**는 비워두면 전체이며, 지정하면 원본 순서 앞쪽부터 포함합니다(점수·순위 아님). 설정을 변경하면 이전 출력의 복사·저장은 비활성화됩니다.
 - AI용 간결 출력은 기존 `export:account`의 전체 원본 출력과 **별도 기능**입니다. 기존 출력은 유지됩니다.
 
 ## 문서
