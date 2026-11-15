@@ -1,13 +1,29 @@
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { buildCharacterReport } from './build-character-report.mjs';
+import { findEntry, buildLightConeReport, buildRelicSetReport } from './equipment-report.mjs';
 
 const args = process.argv.slice(2);
 const jsonOutput = args.includes('--json');
-const query = args.filter((arg) => arg !== '--json').join(' ').trim();
+const lightConeQueries = [];
+const relicSetQueries = [];
+const characterWords = [];
+
+for (let i = 0; i < args.length; i++) {
+  const value = args[i];
+  if (value === '--json') continue;
+  if (value === '--light-cone' || value === '--relic-set') {
+    const query = args[++i];
+    if (!query || query.startsWith('--')) throw new Error(`${value} 뒤에 이름 또는 ID가 필요합니다.`);
+    (value === '--light-cone' ? lightConeQueries : relicSetQueries).push(query);
+  } else {
+    characterWords.push(value);
+  }
+}
+const query = characterWords.join(' ').trim();
 
 if (!query) {
-  console.error('Usage: npm run export:character -- "<name or ID>" [--json]');
+  console.error('Usage: npm run export:character -- "<캐릭터 이름 또는 ID>" [--json] [--light-cone "<광추>"] [--relic-set "<유물 세트>"]');
   process.exitCode = 1;
 } else {
   const root = resolve('.local-data', 'game');
@@ -17,6 +33,12 @@ if (!query) {
     'characters', 'character_ranks', 'character_skills',
     'character_skill_trees', 'character_promotions',
   ];
+  if (lightConeQueries.length) {
+    filenameList.push('light_cones', 'light_cone_ranks', 'light_cone_promotions', 'paths');
+  }
+  if (relicSetQueries.length) {
+    filenameList.push('relic_sets', 'relics', 'relic_main_affixes', 'relic_sub_affixes', 'properties');
+  }
   const tables = Object.fromEntries(await Promise.all(filenameList.map(async (name) => [
     name, JSON.parse(await readFile(join(base, `${name}.json`), 'utf8')),
   ])));
@@ -45,6 +67,17 @@ if (!query) {
       note: 'Public game data only. No personal inventory or equipped relics.',
     });
 
+    if (lightConeQueries.length || relicSetQueries.length) {
+      report.selectedEquipment = {
+        lightCones: lightConeQueries.map((name) => buildLightConeReport(
+          findEntry(tables.light_cones, name, '광추'), tables
+        )),
+        relicSets: relicSetQueries.map((name) => buildRelicSetReport(
+          findEntry(tables.relic_sets, name, '유물 세트'), tables
+        )),
+      };
+    }
+
     if (jsonOutput) {
       console.log(JSON.stringify(report, null, 2));
     } else {
@@ -55,6 +88,10 @@ if (!query) {
         ['행적', report.traces],
         ['승급/레벨', report.promotions],
       ];
+      if (report.selectedEquipment) {
+        if (lightConeQueries.length) sections.push(['선택 광추(중첩·승급 효과)', report.selectedEquipment.lightCones]);
+        if (relicSetQueries.length) sections.push(['선택 유물 세트(부위·옵션)', report.selectedEquipment.relicSets]);
+      }
       // Preserve original JSON in code blocks: placeholders such as #1[i]
       // and their params need to remain paired for accurate AI interpretation.
       const markdown = `# ${character.name} (${character.id})\n\n` +
