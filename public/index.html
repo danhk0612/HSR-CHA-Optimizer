@@ -29,6 +29,11 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 .candidate-filter-option{display:flex;gap:8px;align-items:center;font-size:12px;margin:0;padding:6px 3px;cursor:pointer}
 .candidate-filter-option span{min-width:0;flex:1}.candidate-filter-option small{color:#a6b4cc;white-space:nowrap}
 .candidate-filter-area>p{margin:11px 4px 0}
+.sync-history{margin-top:14px}.sync-history summary{cursor:pointer;font-weight:600;font-size:13px}
+.sync-history-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}
+.sync-history-table th,.sync-history-table td{padding:8px;border-bottom:1px solid #2a3852;text-align:left}
+.sync-history-table td:not(:first-child),.sync-history-table th:not(:first-child){text-align:right}
+.sync-history-table-wrap{overflow-x:auto}
 .public-editor{margin-top:20px}#publicResult{height:260px}.stats-editor{margin-top:20px}.stats-editor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .stats-editor-head p{margin:4px 0 10px}.stats-fields{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin:14px 0}
 .stats-fields label{display:flex;flex-direction:column;gap:5px;margin:0}
@@ -46,6 +51,18 @@ textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospac
 <button id="importArchive" type="button" class="secondary">계정 JSON 가져오기</button>
 <small id="setupStatus">게임 데이터와 Reliquary Archiver JSON을 준비하세요.</small>
 </div>
+<section class="panel sync-history" id="syncHistory" hidden>
+<details><summary id="syncHistorySummary">게임 데이터 변경 내역</summary>
+<p id="syncHistoryInfo"></p>
+<div class="sync-history-table-wrap">
+<table class="sync-history-table">
+<thead><tr><th>게임 데이터</th><th>기존</th><th>현재</th><th>추가</th><th>삭제</th><th>변경</th></tr></thead>
+<tbody id="syncHistoryRows"></tbody>
+</table>
+</div>
+<p>각 항목의 내용은 별도 로컬 JSON 이력에 저장됩니다. 비교 결과에는 개인 계정 정보가 포함되지 않습니다.</p>
+</details>
+</section>
 <main><section class="panel"><h2>보유 캐릭터</h2>
 <input id="filter" type="text" placeholder="캐릭터 이름 검색" autocomplete="off" aria-label="캐릭터 검색">
 <div class="roster" id="roster"></div></section>
@@ -217,6 +234,49 @@ function selectedRelicFilters() {
   ]));
 }
 
+function renderGameChanges(report) {
+  const panel = el('syncHistory');
+  panel.hidden = !report;
+  if (!report) return;
+  const initial = report.status === 'initial';
+  const counts = report.totals ?? {};
+  const summary = initial
+    ? '게임 데이터 기준 스냅샷 저장 · ' + (report.tables?.length ?? 0) + '종'
+    : '게임 데이터 변경 내역 · 추가 ' + (counts.added ?? 0) +
+      ' / 삭제 ' + (counts.removed ?? 0) + ' / 내용 변경 ' + (counts.modified ?? 0);
+  el('syncHistorySummary').textContent = summary;
+  const previousVersion = report.previous?.version ?? '최초 동기화';
+  const currentVersion = report.current?.version ?? '-';
+  el('syncHistoryInfo').textContent = previousVersion + ' → ' + currentVersion +
+    ' · 동기화 ' + (report.syncedAt ?? '시각 미확인') +
+    (initial ? ' · 이전 자료가 없어 변경 내용을 비교하지 않았습니다.' : '');
+  const body = el('syncHistoryRows');
+  body.replaceChildren();
+  for (const item of report.tables ?? []) {
+    if (initial || (item.added === 0 && item.removed === 0 && item.modified === 0)) continue;
+    const tr = document.createElement('tr');
+    for (const value of [
+      item.filename,
+      item.previousCount ?? '-',
+      item.currentCount,
+      item.added, item.removed, item.modified,
+    ]) {
+      const td = document.createElement('td');
+      td.textContent = String(value);
+      tr.append(td);
+    }
+    body.append(tr);
+  }
+  if (!body.childElementCount) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 6;
+    td.textContent = initial ? '비교 기준이 저장됐습니다.' : '변경된 테이블이 없습니다.';
+    tr.append(td);
+    body.append(tr);
+  }
+}
+
 function invalidateOutput() {
   if (!output) return;
   output = '';
@@ -261,6 +321,7 @@ function render() {
 
 async function refreshState() {
   const state = desktop ? await desktop.getState() : await fetch('/api/state').then(r => r.json());
+  renderGameChanges(state.gameChanges);
   all = state.characters ?? [];
   sheetRecords = state.characterStats ?? {};
   sheetFields = state.characterStatFields ?? {};
