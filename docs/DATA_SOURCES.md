@@ -42,6 +42,18 @@ items.json
 - 미장착 장비, 개인 재화/재료의 자동 획득은 검증 후 범위 확정.
 - 스캐너의 게임 화면 조작이나 비공식 네트워크 패킷 캡처 기능은 프로그램에 기본 내장하지 않음.
 
+### 구현된 스캐너 가져오기 초안
+
+- 형식 기준: HSR-Scanner README의 `source="HSR-Scanner"`, `version=4` JSON 출력 예시.
+- `characters`, `light_cones`, `relics` 배열을 보존하고 게임 원본 ID와 매칭.
+- `location`은 장착 캐릭터 ID, 유물 `set_id`는 원본 유물 세트 ID로 사용.
+- 캐릭터의 `skills`, `traces`, `eidolon`, `affinitive_eidolons`, `memosprite`, `elation`을 원문 보존.
+- 유물 `substats`, `preview_substats`, `mainstat`, 장착/미장착 구분 원문 보존.
+- UID는 로컬 원본에만 저장하고 AI용 내보내기 출력에는 넣지 않음.
+- 실제 능력치, 재화, 천장 정보는 스캐너 JSON 예시에 없으므로 임의로 생성하지 않음.
+- 계정에 스캔되지 않은 캐릭터나 장비를 '미보유'로 추론하지 않음.
+- Windows에서 실제 게임 스캔 파일 입력 및 스캐너 업데이트와의 호환성 검증이 필요.
+
 ## 출력 데이터 원칙
 
 - 게임 버전, 언어, 출처, 수집 시각 기록.
