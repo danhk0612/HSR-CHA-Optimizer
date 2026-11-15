@@ -1,5 +1,6 @@
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { readPreviousGameSnapshot, compareGameSnapshots, saveGameChangeReport } from './game-changes.mjs';
 
 const BASE_URL = 'https://raw.githubusercontent.com/Mar-7th/StarRailRes/master';
 const LANGUAGE = 'kr';
@@ -36,6 +37,7 @@ export async function syncGameData(root = process.cwd(), onProgress = () => {}, 
     throw new Error('Unsupported source folder in info.json');
   }
   await mkdir(store, { recursive: true });
+  const previous = await readPreviousGameSnapshot(store);
   const staging = join(store, `.staging-${process.pid}-${Date.now()}`);
   const backup = join(store, `.backup-${process.pid}-${Date.now()}`);
   await mkdir(staging, { recursive: true });
@@ -55,6 +57,7 @@ export async function syncGameData(root = process.cwd(), onProgress = () => {}, 
       sourceFolder: folder, language: LANGUAGE, syncedAt, files,
     };
     await writeFile(join(staging, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
+    const changeReport = await compareGameSnapshots(store, previous, { version, language: LANGUAGE }, INDEX_FILES, staging, syncedAt);
     const target = join(store, version, LANGUAGE);
     await mkdir(join(store, version), { recursive: true });
     let movedOld = false;
@@ -74,7 +77,8 @@ export async function syncGameData(root = process.cwd(), onProgress = () => {}, 
     await rm(backup, { recursive: true, force: true });
     await writeFile(join(store, 'current.json'),
       JSON.stringify({ version, language: LANGUAGE, syncedAt }, null, 2), 'utf8');
-    return { ...manifest, target };
+    await saveGameChangeReport(store, changeReport);
+    return { ...manifest, target, changes: changeReport };
   } finally {
     await rm(staging, { recursive: true, force: true });
   }
