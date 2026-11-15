@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld('hsrDesktop', {
   importArchive: () => ipcRenderer.invoke('hsr:import'),
   importSavedShowcase: () => ipcRenderer.invoke('hsr:showcase-import'),
   saveManualSheet: (id, values) => ipcRenderer.invoke('hsr:manual-save', { id, values }),
+  saveWarpPool: (name, input) => ipcRenderer.invoke('hsr:warp-save', { name, input }),
+  clearWarpPool: (name) => ipcRenderer.invoke('hsr:warp-clear', name),
   clearManualSheet: (id) => ipcRenderer.invoke('hsr:manual-clear', id),
   syncGame: () => ipcRenderer.invoke('hsr:sync'),
   copyText: (text) => ipcRenderer.invoke('hsr:copy', text),
