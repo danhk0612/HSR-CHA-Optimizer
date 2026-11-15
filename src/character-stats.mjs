@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
 
 // Deliberately separate from Reliquary Archiver; never overwrite the scanner snapshot.
 const FORMAT = 1;
@@ -14,20 +15,27 @@ export const MANUAL_STAT_FIELDS = Object.fromEntries(
   Object.entries(STATS).map(([field, [name, unit]]) => [field, { name, unit }]),
 );
 
-function file(root) { return resolve(root, '.local-data', 'account', 'character-stats.json'); }
+function file(root, scanner) {
+  const uid = scanner?.metadata?.uid;
+  const suffix = uid == null || uid === ''
+    ? ''
+    : '-' + createHash('sha256').update(String(uid)).digest('hex').slice(0, 16);
+  // No raw UID or account nickname is stored in the filename.
+  return resolve(root, '.local-data', 'account', 'character-stats' + suffix + '.json');
+}
 
-export async function readCharacterStats(root = process.cwd()) {
+export async function readCharacterStats(root = process.cwd(), scanner = null) {
   let data;
-  try { data = JSON.parse(await readFile(file(root), 'utf8')); }
+  try { data = JSON.parse(await readFile(file(root, scanner), 'utf8')); }
   catch (e) { if (e.code === 'ENOENT') return { schemaVersion: FORMAT, characters: {} }; throw e; }
   if (data.schemaVersion !== FORMAT || !data.characters || typeof data.characters !== 'object' ||
       Array.isArray(data.characters)) throw new Error('지원하지 않는 능력치 저장 형식');
   return data;
 }
 
-async function saveCharacterStats(root, data) {
+async function saveCharacterStats(root, data, scanner) {
   await mkdir(join(resolve(root), '.local-data', 'account'), { recursive: true });
-  await writeFile(file(root), JSON.stringify(data, null, 2), 'utf8');
+  await writeFile(file(root, scanner), JSON.stringify(data, null, 2), 'utf8');
 }
 
 function ownedId(id, scanner) {
@@ -49,24 +57,24 @@ export async function saveManualCharacterStats(root, scanner, id, values) {
     cleaned[field] = raw;
   }
   if (!Object.keys(cleaned).length) throw new Error('능력치를 한 항목 이상 입력하세요.');
-  const data = await readCharacterStats(root);
+  const data = await readCharacterStats(root, scanner);
   data.characters[key] ??= {};
   data.characters[key].manual = {
     source: 'game-character-screen-manual',
     recordedAt: new Date().toISOString(),
     values: cleaned,
   };
-  await saveCharacterStats(root, data);
+  await saveCharacterStats(root, data, scanner);
   return data.characters[key].manual;
 }
 
 export async function clearManualCharacterStats(root, scanner, id) {
   const key = ownedId(id, scanner);
-  const data = await readCharacterStats(root);
+  const data = await readCharacterStats(root, scanner);
   if (data.characters[key]) {
     delete data.characters[key].manual;
     if (!Object.keys(data.characters[key]).length) delete data.characters[key];
-    await saveCharacterStats(root, data);
+    await saveCharacterStats(root, data, scanner);
   }
   return true;
 }
@@ -105,7 +113,7 @@ export async function importMihomoParsed(root, scanner, input, importedAt = new 
     throw new Error('JSON의 UID가 현재 계정 UID와 일치하지 않습니다.');
   if (!input.characters.length) throw new Error('공개 전시에 등록된 캐릭터가 없습니다.');
 
-  const data = await readCharacterStats(root);
+  const data = await readCharacterStats(root, scanner);
   const parsed = new Map();
   for (const char of input.characters) {
     const key = ownedId(char.id, scanner);
@@ -134,7 +142,7 @@ export async function importMihomoParsed(root, scanner, input, importedAt = new 
   for (const [key, entry] of Object.entries(data.characters)) {
     if (!Object.keys(entry).length) delete data.characters[key];
   }
-  await saveCharacterStats(root, data);
+  await saveCharacterStats(root, data, scanner);
   return { characters: parsed.size, importedAt, source: 'mihomo-parsed-local-file' };
 }
 
