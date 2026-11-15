@@ -16,21 +16,20 @@
 ```powershell
 git pull --ff-only
 npm install --no-audit --no-fund
-npm test
-npm run dist:win
+npm run verify:win
 ```
 
 완료되면 아래 파일이 생성됩니다.
 
-`dist/HSR-CHA-Optimizer-0.1.0-portable.exe`
+`dist/HSR-CHA-Optimizer-0.1.1-portable.exe`
 
-**이 문서 작성 당시 Windows 실제 빌드 결과는 아직 검증되지 않았습니다.** 먼저 `npm test` 통과와 `npm run dist:win` 성공을 확인하세요. 빌드 도구/패키징에 필요한 종속 파일을 다운로드할 수 있어야 합니다.
+**0.1.0 버전은 사용자 Windows 11에서 테스트 22건 통과, EXE 약 110MB 생성까지 검증됐습니다.** 0.1.1의 `verify:win` 명령은 테스트 → EXE 재빌드 → 숨겨진 Electron 창을 실제로 실행해 렌더러·IPC·기본 화면을 확인합니다. 빌드 도구와 종속 파일 다운로드를 위한 인터넷 연결이 필요합니다.
 
 개발 상태의 Electron 창을 열려면 `npm run desktop` 을 사용합니다. 이때는 프로젝트의 기존 `.local-data/` 파일을 그대로 사용하므로 기존 데이터 재수집이 필요 없습니다.
 
 ## 빌드 컴퓨터 없이 GitHub Actions로 EXE 만들기
 
-GitHub 저장소의 **Actions → Build Windows Portable EXE → Run workflow** 를 이용할 수 있습니다. 테스트와 빌드를 수행한 뒤 워크플로 실행 결과의 `HSR-CHA-Optimizer-Windows-Portable` artifact ZIP에서 EXE를 받을 수 있게 구성했습니다. 다운로드 가능 기간은 14일입니다. Actions가 사용 가능한 저장소 설정이 필요합니다.
+GitHub 저장소의 **Actions → Build Windows Portable EXE → Run workflow** 를 이용할 수 있습니다. 단위 테스트·Windows Portable 빌드·Electron GUI 스모크 테스트를 수행한 뒤 워크플로 실행 결과의 `HSR-CHA-Optimizer-Windows-Portable` artifact ZIP에서 EXE를 받을 수 있게 구성했습니다. 다운로드 가능 기간은 14일입니다. Actions가 사용 가능한 저장소 설정이 필요합니다.
 
 ## 첫 실행
 
@@ -55,6 +54,7 @@ Portable EXE를 실행하면 자체 Windows 창이 열립니다.
 
 ## 현재 남은 작업
 
-- 실제 Windows x64 EXE 패키징/실행 테스트
-- 별도 프로그램 아이콘 및 설치형 배포 여부 결정
+- Windows 0.1.1 EXE 재빌드 및 자동 GUI 실행 확인 (`npm run verify:win`)
+- **별도 프로그램 아이콘 SVG 적용됨** (`build/icon.svg`, electron-builder 변환); 미서명 EXE 유지
+- 설치형 배포는 현재 범위에서 제외 (Portable 우선)
 - 공개 전시 기반 일부 캐릭터의 실제 최종 능력치 도입 여부와 데이터 출처 검증 (docs/FINAL_STATS.md)
