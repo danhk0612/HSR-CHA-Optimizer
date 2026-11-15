@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, saveWarpPool, clearWarpPool } from '../src/desktop-service.mjs';
+import { getDesktopState, exportDesktopReport, saveManualSheet, clearManualSheet, importSavedShowcase, saveWarpPool, clearWarpPool, buildFullAccountForDesktop, buildFullAccountFolder, saveAccountAnalysisPreferences } from '../src/desktop-service.mjs';
 import { importAccountArchive } from '../src/account-import.mjs';
 
 const files = [
@@ -143,6 +143,25 @@ test('desktop imports actual v4-compatible file, labels Trailblazer and excludes
       candidateFilters: { setIds: ['111'] },
     }));
     assert.equal(restricted.candidates.matching, 0);
+    await saveAccountAnalysisPreferences(root, '여성 캐릭터만 사용. 성옥 보존.');
+    const completeAccount = await buildFullAccountForDesktop(root);
+    assert.equal(completeAccount.counts.original.characters, 2);
+    assert.equal(completeAccount.counts.original.relics, 3);
+    assert.equal(completeAccount.relics.length, 3);
+    assert.deepEqual(completeAccount.characters.find(c => c.id === '1308').equippedRelicKeys, ['relic:0']);
+    assert.equal(completeAccount.relics.find(r => r.key === 'relic:0').raw.location, '1308');
+    assert.equal(completeAccount.relics.find(r => r.key === 'relic:1').equippedBy.status, 'unequipped');
+    assert.equal(completeAccount.supplemental.analysisPreferences, '여성 캐릭터만 사용. 성옥 보존.');
+    assert.ok(!JSON.stringify(completeAccount).includes('123456789'));
+    const bundle = await buildFullAccountFolder(root);
+    assert.equal(bundle.manifest.counts.original.relics, 3);
+    assert.equal(JSON.parse(bundle.files['02-characters.json']).records.length, 2);
+    assert.equal(JSON.parse(bundle.files['04-relics-001.json']).records.length, 3);
+    assert.equal(bundle.manifest.files.filter(f => f.file.startsWith('04-relics-'))
+      .reduce((n, f) => n + f.records, 0), 3);
+    assert.equal((await getDesktopState(root)).analysisPreferences.text,
+      '여성 캐릭터만 사용. 성옥 보존.');
+
     await saveManualSheet(root, '1308', { hp: 3500, spd: 143.5, crit_dmg: 180.2 });
     const publicFile = join(root, 'mihomo.json');
     await writeFile(publicFile, JSON.stringify({
