@@ -32,7 +32,7 @@
 - [x] 0.1.8 전체 계정 AI 전달용 JSON·분할 폴더 (Windows 78/78 및 실제 75명·445개·2,649개 검증 통과)
 - [x] 0.1.9 실계정 탐색·복합 필터·정렬·일괄 선택 및 AI JSON/Markdown·사람용 HTML 출력 (Windows 90/90·EXE 실행 검증 완료)
 - [x] 0.1.10 자료 종류 체크박스·독립 탭·각각의 검색/결과/정렬/선택 UI 개편 (Windows 96/96 및 가상 계정 Electron 조작 검증 통과)
-- [x] 0.1.10 실제 로컬 계정으로 선택 출력 JSON·Markdown·HTML GUI 저장 및 내용 대조 검사 구현 (Windows 재검증 대기)
+- [x] 0.1.10 실제 로컬 계정으로 선택 출력 JSON·Markdown·HTML GUI 저장 및 내용 대조 검사 구현·통과 (Windows 97/97, 실계정 Electron 자동 검사 성공)
 - [ ] 공개 전시 기반 최종 능력치 부분 수집 검토 (전체 보유 계정은 대체 불가)
 - [x] AI용 간결 출력·미장착 유물 후보 선택·재료 한국어화 (실제 파일 기반 통합 검증)
 
@@ -97,7 +97,7 @@ npm install --no-audit --no-fund
 npm run verify:local-win
 ```
 
-예상 산출물: `dist/HSR-CHA-Optimizer-0.1.10-portable.exe`. 0.1.9는 Windows에서 90/90 테스트·실계정 75/445/2649·검색/선택 출력 검증·EXE 빌드/실행에 통과했습니다. 0.1.10은 Windows 96/96 테스트·가상 계정 Electron 조작 검증을 통과했습니다. 실계정 UI에서 5개 자료 종류 선택 및 3형식 출력까지 확인하는 검사를 추가했으며 재검증은 아직 필요합니다. `verify:local-win`은 기존 `.local-data`의 실제 계정 검증까지 포함합니다. 일반 CI에서 사용하는 `verify:win`은 개인정보 파일이 필요하지 않습니다.
+예상 산출물: `dist/HSR-CHA-Optimizer-0.1.10-portable.exe`. 0.1.9는 Windows에서 90/90 테스트·실계정 75/445/2649·검색/선택 출력 검증·EXE 빌드/실행에 통과했습니다. 0.1.10은 Windows 97/97 테스트·가상 계정 및 실제 로컬 계정 Electron 조작 검증을 통과했습니다. 5개 자료 종류별 독립 검색·선택과 JSON/Markdown/HTML 임시 파일 저장·내용 검사를 확인했습니다. 실제 저장 대화상자를 직접 조작하는 사용자 검증은 별도로 남아 있습니다. `verify:local-win`은 기존 `.local-data`의 실제 계정 검증까지 포함합니다. 일반 CI에서 사용하는 `verify:win`은 개인정보 파일이 필요하지 않습니다.
 
 첫 실행 시 프로그램에서 **게임 데이터 동기화 → 계정 JSON 가져오기**를 누르면 됩니다. 개발용 `npm run desktop`은 기존 `.local-data`를 재사용하며, 패키징한 EXE는 Windows 사용자 데이터 폴더에 따로 저장합니다. 개인 자료는 EXE에 포함되지 않습니다.
 
@@ -196,7 +196,7 @@ npm run gui
 # 브라우저에서 http://127.0.0.1:8765 접속
 ```
 
-`npm run gui`는 로컬 브라우저 화면(127.0.0.1), `npm run desktop`은 Electron 창이며, `npm run dist:win`으로 Windows Portable EXE를 빌드합니다. 0.1.9까지 Windows 전체 검증이 완료됐습니다. 0.1.10부터는 각 종류의 독립 검색·필터·선택 결과를 JSON/Markdown/HTML로 출력합니다.
+`npm run gui`는 로컬 브라우저 화면(127.0.0.1), `npm run desktop`은 Electron 창이며, `npm run dist:win`으로 Windows Portable EXE를 빌드합니다. 0.1.10까지 Windows 자동 검증이 완료됐습니다(97/97 및 실계정 Electron 출력 검사 통과). 0.1.10부터는 각 종류의 독립 검색·필터·선택 결과를 JSON/Markdown/HTML로 출력합니다.
 
 CLI만 사용할 때:
 
