@@ -36,15 +36,16 @@ export function buildEnemyIndex(templates, textMaps) {
   if (!Array.isArray(textMaps) || !textMaps.length) throw new Error('한국어 이름 자료가 없습니다.');
   const lookup = new Map();
   let conflicts = 0;
+  const conflicted = new Set();
   const wanted = new Set(templates.map(extractHash).filter(Boolean));
   for (const textMap of textMaps) {
     if (!textMap || typeof textMap !== 'object' || Array.isArray(textMap))
       throw new Error('한국어 TextMap 형식이 잘못됐습니다.');
     for (const hash of wanted) {
       const text = textMap[hash];
-      if (typeof text !== 'string' || !text.trim()) continue;
+      if (typeof text !== 'string' || !text.trim() || conflicted.has(hash)) continue;
       if (lookup.has(hash) && lookup.get(hash) !== text) {
-        lookup.set(hash, null); conflicts++;
+        conflicted.add(hash); lookup.set(hash, null); conflicts++;
       } else if (!lookup.has(hash)) lookup.set(hash, text);
     }
   }
