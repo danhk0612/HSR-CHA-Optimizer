@@ -154,10 +154,21 @@ export function selectInventoryForExport(report, request) {
   const sortBy = request.sortBy ?? 'name';
   const descending = request.descending === true;
   const sorted = filterInventoryCatalog(catalog.rows, { sortBy, descending });
-  const order = new Map(sorted.map((row, i) => [row.key, i]));
+  let exportOrder = sorted;
+  if (request.orderKeys !== undefined) {
+    if (!Array.isArray(request.orderKeys) || request.orderKeys.length !== selected.size ||
+        request.orderKeys.some(key => typeof key !== 'string') ||
+        new Set(request.orderKeys).size !== selected.size ||
+        request.orderKeys.some(key => !selected.has(key))) {
+      throw new Error('종류별 정렬 순서와 선택 목록이 일치하지 않습니다.');
+    }
+    const index = new Map(catalog.rows.map(row => [row.key, row]));
+    exportOrder = request.orderKeys.map(key => index.get(key));
+  }
+  const order = new Map(exportOrder.map((row, i) => [row.key, i]));
   const choose = items => items.filter(x => selected.has(x.key))
     .sort((a, b) => order.get(a.key) - order.get(b.key));
-  const selectedRows = sorted.filter(row => selected.has(row.key));
+  const selectedRows = exportOrder.filter(row => selected.has(row.key));
   const selectedCharacters = choose(report.characters);
   const selectedCones = choose(report.lightCones);
   const selectedRelics = choose(report.relics);
@@ -191,7 +202,7 @@ export function selectInventoryForExport(report, request) {
     schemaVersion: 1, metadata: report.metadata,
     selection: {
       mode: 'explicit-keys', counts,
-      sortBy, descending,
+      sortBy: request.orderKeys ? 'per-category' : sortBy, descending: request.orderKeys ? null : descending,
       availableCounts: catalog.counts,
       note: '선택 출력입니다. 미선택 항목은 미보유를 의미하지 않습니다. 장착 관계는 원래 계정 전체를 기준으로 표시합니다.',
     },
