@@ -1,1271 +1,669 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HSR-CHA-Optimizer</title>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HSR-CHA-Optimizer · 계정 자료</title>
 <style>
-:root{font-family:system-ui,"Malgun Gothic",sans-serif;color:#e8ebf6;background:#101827;color-scheme:dark}
-*{box-sizing:border-box}body{margin:0}.shell{max-width:1300px;margin:auto;padding:28px}
-header{display:flex;justify-content:space-between;align-items:end;gap:12px;border-bottom:1px solid #27334b;padding-bottom:20px}
-h1{font-size:24px;margin:0 0 8px}h2{font-size:17px;margin:0 0 16px}p{color:#a6b4cc;font-size:13px;line-height:1.55}
-main{display:grid;grid-template-columns:minmax(250px,340px) minmax(430px,1fr);gap:20px;margin-top:22px}
-.panel{background:#171f32;border:1px solid #2a3852;border-radius:14px;padding:20px;min-width:0}
-.stats{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#a6b4cc}b{color:#fff}
-input,select,textarea,button{font:inherit}input[type=text],input[type=number],select,textarea{width:100%;background:#0e1728;border:1px solid #3d4a64;border-radius:8px;color:#eef;padding:10px}
-label{display:block;font-size:13px;margin:12px 0 6px}.roster{margin-top:12px;max-height:560px;overflow-y:auto;border:1px solid #32405a;border-radius:8px}
-.person{display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid #263149;cursor:pointer}.person:last-child{border:0}.person:hover{background:#202d45}
-.person input{accent-color:#81a9fa}.person small{margin-left:auto;color:#a6b4cc;white-space:nowrap}
-.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.check{display:flex;align-items:center;gap:7px}
-button{border:0;border-radius:9px;padding:11px 14px;background:#4774cf;color:white;font-weight:600;cursor:pointer}button.secondary{background:#33435f}
-button:disabled{opacity:.5;cursor:wait}.actions{display:flex;gap:8px;margin:18px 0 12px;flex-wrap:wrap}
-textarea{height:350px;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:1.5}
-#message{min-height:20px;color:#a9c8ff;margin-top:12px;white-space:pre-line}
-[hidden]{display:none!important}.desktop-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px;padding:14px;border:1px solid #2a3852;background:#171f32;border-radius:12px}.desktop-toolbar small{color:#a6b4cc}.desktop-toolbar button{padding:10px 12px}
-.candidate-filter-area{margin:14px 0 10px;padding:12px;border:1px solid #33435f;border-radius:10px}
-.candidate-filter-area legend{font-size:13px;font-weight:700;color:#cedbff;padding:0 6px}
-.candidate-filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-.candidate-filter-group{border:1px solid #33435f;border-radius:8px;background:#0f1a2d;min-width:0}
-.candidate-filter-group summary{padding:11px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:6px}
-.candidate-filter-group summary span{color:#a6b4cc;white-space:nowrap;font-size:12px}
-.candidate-filter-choices{padding:6px 8px;max-height:210px;overflow:auto;border-top:1px solid #33435f}
-.candidate-filter-option{display:flex;gap:8px;align-items:center;font-size:12px;margin:0;padding:6px 3px;cursor:pointer}
-.candidate-filter-option span{min-width:0;flex:1}.candidate-filter-option small{color:#a6b4cc;white-space:nowrap}
-.candidate-filter-area>p{margin:11px 4px 0}
-.sync-history{margin-top:14px}.sync-history summary{cursor:pointer;font-weight:600;font-size:13px}
-.sync-history-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}
-.sync-history-table th,.sync-history-table td{padding:8px;border-bottom:1px solid #2a3852;text-align:left}
-.sync-history-table td:not(:first-child):not(:last-child),.sync-history-table th:not(:first-child):not(:last-child){text-align:right}
-.sync-history-table td:last-child{min-width:180px;max-width:420px;overflow-wrap:anywhere}
-.sync-history-table-wrap{overflow-x:auto}
-.public-editor{margin-top:20px}#publicResult{height:260px}.stats-editor{margin-top:20px}.stats-editor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
-.stats-editor-head p{margin:4px 0 10px}.stats-fields{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin:14px 0}
-.stats-fields label{display:flex;flex-direction:column;gap:5px;margin:0}
-.stats-fields input{width:100%}.stats-editor .actions{margin:10px 0}
-@media(max-width:900px){.stats-fields{grid-template-columns:repeat(3,minmax(120px,1fr))}}
-@media(max-width:560px){.stats-fields{grid-template-columns:repeat(2,minmax(120px,1fr))}}
-@media(max-width:650px){.candidate-filter-grid{grid-template-columns:1fr}}
-@media(max-width:850px){main{grid-template-columns:1fr}.shell{padding:15px}header{align-items:start;flex-direction:column}}
-.inventory-explorer{margin-top:20px}
-.inventory-head{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.inventory-layout{display:grid;grid-template-columns:minmax(245px,315px) minmax(0,1fr);gap:18px}
-.inventory-filters{border:1px solid #35445e;background:#101b2e;border-radius:10px;padding:12px}
-.inventory-filters>label:first-child{margin-top:0}
-.inventory-filters input[type=number]{width:100%}
-.inventory-selectors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-.inventory-selector{border:1px solid #384660;border-radius:9px;min-width:0}
-.inventory-selector summary{padding:9px;cursor:pointer;font-size:12px}
-.inventory-option-list{padding:8px;max-height:185px;overflow-y:auto;border-top:1px solid #35445e}
-.inventory-option-list label{display:flex;gap:7px;margin:0;padding:4px 0;font-size:12px}
-.inventory-option-list input{width:auto;flex:none}
-.inventory-quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.inventory-list{width:100%;border-collapse:collapse;font-size:12px}
-.inventory-list th,.inventory-list td{padding:9px;border-bottom:1px solid #303f57;text-align:left;vertical-align:top}
-.inventory-list td small{color:#9fadc6}
-.inventory-list .inventory-item-name{font-weight:600;word-break:break-word}
-.inventory-list details{max-width:480px}.inventory-list summary{cursor:pointer}
-.inventory-list pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;max-width:400px}
-.inventory-results{overflow:auto;max-height:680px;border:1px solid #33435f;border-radius:9px}
-.inventory-status{font-size:12px;color:#a7c6ff;white-space:pre-wrap}
-.inventory-result-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
-.inventory-result-tools>label{margin:4px 0;min-width:150px;flex:1}
-.inventory-options-row{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
-.inventory-options-row label{margin:0;display:flex;gap:6px}
-.inventory-output-preview{height:180px}
-.legacy-options{margin-top:20px;border:1px solid #33435f;border-radius:12px;padding:15px;background:#121b2c}
-.legacy-options>summary{font-weight:600;cursor:pointer;padding:4px 0}
-@media(max-width:930px){.inventory-layout{grid-template-columns:1fr}}
-</style></head>
-<body><div class="shell"><header><div><h1>HSR-CHA-Optimizer</h1>
-<p>보유 데이터와 한국어 게임 정보를 선택해 AI 전달용 자료로 정리합니다. 자동 추천·AI API 호출은 하지 않습니다.</p></div>
-<div class="stats" id="stats">데이터 읽는 중…</div></header>
-<div class="desktop-toolbar" id="desktopToolbar" hidden>
-<button id="syncGame" type="button">게임 데이터 동기화</button>
-<button id="importArchive" type="button" class="secondary">계정 JSON 가져오기</button>
-<small id="setupStatus">게임 데이터와 Reliquary Archiver JSON을 준비하세요.</small>
-</div>
-<section class="panel sync-history" id="syncHistory" hidden>
-<details><summary id="syncHistorySummary">게임 데이터 변경 내역</summary>
-<p id="syncHistoryInfo"></p>
-<div class="sync-history-table-wrap">
-<table class="sync-history-table">
-<thead><tr><th>게임 데이터</th><th>기존</th><th>현재</th><th>추가</th><th>삭제</th><th>변경</th><th>ID 예시</th></tr></thead>
-<tbody id="syncHistoryRows"></tbody>
-</table>
-</div>
-<p>각 항목의 내용은 별도 로컬 JSON 이력에 저장됩니다. 비교 결과에는 개인 계정 정보가 포함되지 않습니다.</p>
-</details>
-</section>
-<section class="panel inventory-explorer" id="inventoryExplorer">
-<div class="inventory-head"><div><h2>계정 데이터 탐색·선택·출력</h2>
-<p>보유 자료를 검색하고 조건별로 필터한 뒤 필요한 항목만 선택해 AI용 JSON/Markdown 또는 읽기 좋은 HTML 문서로 출력합니다. 성별은 원본에 없어 제공하지 않습니다.</p></div>
-<small id="inventorySummary">계정 자료 준비 중…</small></div>
-<div class="inventory-layout">
-<div class="inventory-filters">
-<label for="inventoryGroup">자료 종류</label>
-<select id="inventoryGroup">
-<option value="all">전체 자료</option><option value="characters">캐릭터</option>
-<option value="lightCones">광추</option><option value="relics">유물 (터널)</option>
-<option value="ornaments">차원 장신구</option><option value="materials">재료·티켓</option>
-</select>
-<label for="inventorySearch">이름·ID·세트·장착 캐릭터 검색</label>
-<input id="inventorySearch" type="text" placeholder="이름, ID, 세트 검색">
-<div class="inventory-selectors">
-<details class="inventory-selector"><summary>성급 <span id="invRarityCount"></span></summary><div id="invRarities" class="inventory-option-list"></div></details>
-<details class="inventory-selector"><summary>속성 <span id="invElementCount"></span></summary><div id="invElements" class="inventory-option-list"></div></details>
-<details class="inventory-selector"><summary>운명의 길 <span id="invPathCount"></span></summary><div id="invPaths" class="inventory-option-list"></div></details>
-<details class="inventory-selector"><summary>유물·장신구 세트 <span id="invSetCount"></span></summary><div id="invSets" class="inventory-option-list"></div></details>
-<details class="inventory-selector"><summary>장비 부위 <span id="invSlotCount"></span></summary><div id="invSlots" class="inventory-option-list"></div></details>
-<details class="inventory-selector"><summary>주옵션 <span id="invMainCount"></span></summary><div id="invMainstats" class="inventory-option-list"></div></details>
-<details class="inventory-selector"><summary>부옵션 (모두 포함) <span id="invSubCount"></span></summary><div id="invSubstats" class="inventory-option-list"></div></details>
-</div>
-<div class="inventory-quick">
-<div><label for="invMinLevel">최소 레벨·강화</label><input id="invMinLevel" type="number" min="0" placeholder="제한 없음"></div>
-<div><label for="invMaxLevel">최대 레벨·강화</label><input id="invMaxLevel" type="number" min="0" placeholder="제한 없음"></div>
-<div><label for="invMinEidolon">최소 성혼</label><input id="invMinEidolon" type="number" min="0" max="6" placeholder="제한 없음"></div>
-<div><label for="invMinSuper">최소 광추 중첩</label><input id="invMinSuper" type="number" min="1" max="5" placeholder="제한 없음"></div>
-<div><label for="invMinCount">재료 최소 수량</label><input id="invMinCount" type="number" min="0" placeholder="제한 없음"></div>
-<div><label for="invEquipped">장착 상태</label><select id="invEquipped">
-<option value="all">전체</option><option value="owned">장착됨</option>
-<option value="unequipped">미장착</option><option value="unknown-character-id">장착자 불명</option></select></div>
-<div><label for="invLocked">장비 잠금</label><select id="invLocked"><option value="all">전체</option><option value="true">잠금</option><option value="false">잠금 해제</option></select></div>
-<div><label for="invDiscard">유물 폐기 표시</label><select id="invDiscard"><option value="all">전체</option><option value="true">표시됨</option><option value="false">표시 안 됨</option></select></div>
-</div>
-<label for="invStatKey">부옵션 능력치별 조건 (미리보기 부옵션 제외)</label>
-<select id="invStatKey"><option value="">제한 없음</option></select>
-<div class="inventory-quick">
-<div><label for="invStatValue">능력치 최소값</label><input id="invStatValue" type="number" step="any" placeholder="제한 없음"></div>
-<div><label for="invStatCount">최소 강화 횟수</label><input id="invStatCount" type="number" min="0" placeholder="제한 없음"></div>
-</div>
-<div class="actions"><button class="secondary" id="invReset" type="button">필터 전체 초기화</button></div>
-<p>같은 필터에서 다중 선택은 OR, 필터 종류 사이에는 AND입니다. 부옵션 다중 선택은 모두 포함 조건입니다. 현재 획득한 부옵션만 검사합니다.</p>
-</div>
-<div>
-<div class="inventory-result-tools">
-<label for="invSort">정렬<select id="invSort">
-<option value="name">이름</option><option value="rarity">성급</option>
-<option value="level">레벨·강화</option><option value="eidolon">성혼</option>
-<option value="superimposition">중첩</option><option value="setName">세트</option>
-<option value="mainstat">주옵션</option><option value="equipped">장착 상태</option>
-<option value="count">재료 수량</option>
-</select></label>
-<label for="invDirection">방향<select id="invDirection"><option value="asc">오름차순</option><option value="desc">내림차순</option></select></label>
-</div>
-<p id="inventoryCount">검색 결과를 불러오는 중…</p>
-<div class="actions">
-<button id="inventorySelectFiltered" type="button">검색 결과 모두 선택</button>
-<button id="inventoryClearFiltered" class="secondary" type="button">검색 결과 선택 해제</button>
-<button id="inventorySelectAll" class="secondary" type="button">계정 전체 선택</button>
-<button id="inventoryClearAll" class="secondary" type="button">전체 선택 해제</button>
-</div>
-<div class="inventory-results"><table class="inventory-list">
-<thead><tr><th>선택</th><th>이름·종류</th><th>레벨·성급</th><th>장착·옵션</th></tr></thead>
-<tbody id="inventoryRows"></tbody></table></div>
-<div class="actions">
-<button class="secondary" id="invPrev" type="button">이전</button>
-<span id="invPage">1 / 1</span>
-<button class="secondary" id="invNext" type="button">다음</button>
-</div>
-<details open class="inventory-selector" style="padding:12px">
-<summary>선택 항목 출력</summary>
-<div class="inventory-result-tools">
-<label for="inventoryOutputFormat">파일 형식<select id="inventoryOutputFormat">
-<option value="json">AI용 JSON (원본 상세 포함)</option>
-<option value="markdown">Markdown (읽기용 + 원본 JSON)</option>
-<option value="html">HTML 문서 (사람이 읽기 좋게)</option>
-</select></label>
-</div>
-<div class="inventory-options-row">
-<label><input type="checkbox" id="invIncludeGacha"> 가챠 재화</label>
-<label><input type="checkbox" id="invIncludeWarp"> 수동 천장 기록</label>
-<label><input type="checkbox" id="invIncludeSupplemental" checked> 개인 조건·보완 능력치</label>
-<label><input type="checkbox" id="invIncludeReference" checked> 선택 장비의 효과 원본</label>
-</div>
-<p>장비 장착 관계는 현재 계정 기준이며, 선택하지 않은 항목은 미보유로 취급하지 않습니다.</p>
-<div class="actions">
-<button id="inventoryPreview" class="secondary" type="button">출력 미리보기</button>
-<button id="inventoryExport" type="button">선택 항목 파일 저장</button>
-</div>
-<textarea id="inventoryPreviewText" class="inventory-output-preview" readonly placeholder="미리보기는 최대 20,000자만 표시합니다. 파일 저장은 전체 내용을 출력합니다."></textarea>
-<p class="inventory-status" id="inventoryExportStatus" role="status">자료를 선택하세요.</p>
-</details>
-</div></div></section>
-<details class="legacy-options" id="legacyOptions"><summary>기존 상세 기능 · 수동 능력치 · 워프 기록 · 게임 자료 검색 (고급)</summary>
-<main><section class="panel"><h2>보유 캐릭터</h2>
-<input id="filter" type="text" placeholder="캐릭터 이름 검색" autocomplete="off" aria-label="캐릭터 검색">
-<div class="roster" id="roster"></div></section>
-<section class="panel"><h2>AI용 내보내기 설정</h2>
-<div class="row"><div><label for="candidateMode">미장착 유물 후보</label><select id="candidateMode">
-<option value="none">포함 안 함</option><option value="equipped-sets">선택 캐릭터의 착용 세트와 동일</option>
-<option value="all">미장착 유물 전체</option></select></div>
-<div><label for="minRarity">후보 최소 등급</label><select id="minRarity">
-<option value="0">제한 없음</option><option value="5">5성만</option><option value="4">4성 이상</option></select></div></div>
-<fieldset id="candidateFilterArea" class="candidate-filter-area" hidden>
-<legend>미장착 유물 세부 조건</legend>
-<div class="candidate-filter-grid">
-<details class="candidate-filter-group"><summary>유물 세트 <span id="candidateSetCount">전체</span></summary><div id="candidateSetChoices" class="candidate-filter-choices"></div></details>
-<details class="candidate-filter-group"><summary>부위 <span id="candidateSlotCount">전체</span></summary><div id="candidateSlotChoices" class="candidate-filter-choices"></div></details>
-<details class="candidate-filter-group"><summary>주옵션 <span id="candidateMainCount">전체</span></summary><div id="candidateMainChoices" class="candidate-filter-choices"></div></details>
-<details class="candidate-filter-group"><summary>부옵션 <span id="candidateSubCount">전체</span></summary><div id="candidateSubChoices" class="candidate-filter-choices"></div></details>
-</div>
-<p>같은 종류의 선택은 OR, 서로 다른 종류는 AND로 적용됩니다. 부옵션은 현재 획득한 옵션만 검사하며 미개방 미리보기 옵션은 제외합니다.</p>
-</fieldset>
-<label for="candidateLimit">후보 최대 포함 개수 (비워두면 전체)</label><input id="candidateLimit" type="number" min="1" step="1" placeholder="전체" aria-describedby="candidateHint">
-<p id="candidateHint">미장착 유물을 전체 포함하면 파일이 커질 수 있습니다. 후보 점수나 순위는 계산하지 않습니다.</p>
-<label class="check"><input type="checkbox" id="resources"> 성옥·티켓·재료 수량 포함</label>
-<p>후보의 우열이나 실제 최종 능력치를 임의로 계산하지 않습니다.</p>
-<label for="format">출력 형식</label><select id="format"><option value="json">JSON</option><option value="markdown">Markdown</option></select>
-<div class="actions"><button id="generate">자료 생성</button><button id="copy" class="secondary" disabled>복사</button><button id="save" class="secondary" disabled>파일 저장</button></div>
-<label for="result">미리보기</label><textarea id="result" readonly placeholder="캐릭터를 선택하고 자료 생성을 누르세요."></textarea>
-<p id="message" role="status"></p></section></main>
-<section class="panel stats-editor" id="fullAccountPanel">
-<h2>전체 계정 AI 전달용 자료</h2>
-<p>파티·광추·유물·육성·가챠 추천을 외부 AI에 요청할 때 사용합니다.
-보유 캐릭터·광추·유물 전체를 장착 여부와 관계없이 내보내며, 위의 캐릭터별 후보 필터 및 개수 제한을 적용하지 않습니다.</p>
-<p id="fullAccountSummary">전체 계정 데이터 불러오기 전</p>
-<div class="actions">
-<button id="fullSaveSingle" type="button">전체 계정 JSON 1개 저장</button>
-<button id="fullSaveFolder" class="secondary" type="button">전체 계정 분할 폴더 저장</button>
-</div>
-<p id="fullExportStatus" role="status">저장할 때 스캔 원본과 출력 개수가 일치하는지 확인합니다.</p>
-<details id="analysisPreferencesDetails">
-<summary>개인 분석 조건 (선택)</summary>
-<p>예: 특정 캐릭터를 사용하지 않음, 파티 우선순위, 광추 재배치 허용 여부, 성옥 사용 제한.
-입력한 내용은 계정별 로컬 파일에 보관하고 전체 계정 AI 자료에 포함합니다.</p>
-<label for="analysisPreferences">AI가 고려할 개인 제약·선호</label>
-<textarea id="analysisPreferences" rows="4" maxlength="4000" placeholder="예: 여성 캐릭터만 사용. 기존 파티의 장비 재배치는 가능. 재화 소모는 최소화."></textarea>
-<div class="actions"><button id="analysisPreferencesSave" type="button" class="secondary">개인 분석 조건 저장</button></div>
-</details>
-</section>
-<section class="panel stats-editor" id="sheetEditor" hidden>
-<div class="stats-editor-head">
-<div>
-<h2>캐릭터 최종 능력치 보완</h2>
-<p>수동 입력은 실제 게임 캐릭터 상세 화면의 값을 적으세요. 공개 전시 JSON은 원본 스캔과 별도로 보관하며 계산된 자료임을 표시합니다.</p>
-</div>
-<button id="importShowcase" class="secondary" type="button">저장된 MiHoMo JSON 가져오기</button>
-</div>
-<label for="manualStatCharacter">능력치를 기록할 캐릭터</label>
-<select id="manualStatCharacter"><option value="">캐릭터를 선택하세요</option></select>
-<p id="sheetStatus">능력치 자료 없음</p>
-<div class="stats-fields" id="sheetFields"></div>
-<details id="sheetComparison" hidden>
-<summary id="sheetCompareSummary">수동 입력과 공개 전시 계산값 비교</summary>
-<p id="sheetCompareNote"></p>
-<div class="sync-history-table-wrap">
-<table class="sync-history-table">
-<thead><tr><th>능력치</th><th>수동 입력</th><th>공개 전시 계산값</th><th>차이 (수동 − 계산)</th></tr></thead>
-<tbody id="sheetCompareRows"></tbody>
-</table>
-</div>
-</details>
-<div class="actions">
-<button id="manualSheetSave" type="button">화면 능력치 저장</button>
-<button id="manualSheetClear" type="button" class="secondary">선택 캐릭터의 수동 입력 삭제</button>
-</div>
-<p>퍼센트 능력치는 게임 화면 그대로 입력합니다(예: 치명타 확률 65.3% → 65.3). 수동 값은 입력한 항목만 기록합니다. 미입력 능력치는 0으로 취급하지 않습니다. JSON 가져오기는 이미 내려받은 MiHoMo Parsed 형식만 허용하며 UID를 외부에 요청하지 않습니다.</p>
-</section>
-<section class="panel stats-editor" id="warpPanel" hidden>
-<h2>워프 천장 수동 기록</h2>
-<p>게임 화면에서 직접 확인한 스택만 입력하세요. 이 기능은 워프 이력을 조회하거나 보장 상태를 계산하지 않습니다. 종류별 스택은 서로 섞지 않습니다.</p>
-<div class="row">
-<div><label for="warpType">워프 종류</label><select id="warpType"></select></div>
-<div><label for="warpPity">현재 5성 이후 스택</label><input id="warpPity" type="number" min="0" step="1" placeholder="미입력"></div>
-<div><label for="warpGuarantee">다음 5성 보장 상태</label><select id="warpGuarantee">
-<option value="unknown">미확인</option><option value="yes">픽업 확정</option>
-<option value="no">픽업 확정 아님</option></select></div>
-</div>
-<p id="warpStatus">저장된 워프 기록 없음</p>
-<div class="actions">
-<button id="warpSave" type="button">워프 기록 저장</button>
-<button id="warpClear" class="secondary" type="button">선택 종류 기록 삭제</button>
-</div>
-<p>사용자 수동 기록은 자동으로 갱신되지 않습니다. 상시·초보자 워프에는 픽업 확정 여부를 적용하지 않습니다. 계정별 별도 파일로 저장되며 AI 출력에서는 재료·티켓 포함 옵션을 선택한 경우에만 포함합니다.</p>
-</section>
-<section class="panel public-editor" id="publicEditor">
-<h2>공개 게임 자료 검색</h2>
-<p>시뮬레이션 우주 자료는 기존 20종 데이터에서 검색합니다. 적·보스는 별도의 정식 4.7.0 원본을 선택해 내려받으며, 약점과 실제 전투 수치를 추정하지 않습니다.</p>
-<div class="actions" id="enemyPrepareArea" hidden>
-<button id="prepareEnemies" class="secondary" type="button">적·보스 데이터 별도 준비 (다운로드)</button>
-<span id="enemyDataStatus">적·보스 별도 자료 미준비</span>
-</div>
-<div class="row">
-<div><label for="publicType">자료 종류</label><select id="publicType">
-<option value="blessings">축복</option><option value="curios">기물</option>
-<option value="events">사건</option><option value="blocks">구역</option>
-<option value="enemies">적·보스 (기초 데이터)</option></select></div>
-<div><label for="publicLimit">최대 개수 (1~200)</label><input id="publicLimit" type="number" min="1" max="200" step="1" value="20"></div>
-<div><label for="publicFormat">출력 형식</label><select id="publicFormat">
-<option value="json">JSON</option><option value="markdown">Markdown</option></select></div>
-</div>
-<label for="publicSearch">한국어 이름 또는 원본 ID 검색 (비워두면 전체에서 앞부분)</label>
-<input id="publicSearch" type="text" placeholder="예: 보존">
-<div class="actions">
-<button id="publicGenerate" type="button">자료 검색·생성</button>
-<button id="publicCopy" class="secondary" type="button" disabled>복사</button>
-<button id="publicSave" class="secondary" type="button" disabled>파일 저장</button>
-</div>
-<label for="publicResult">공개 자료 미리보기</label>
-<textarea id="publicResult" readonly placeholder="자료 종류와 검색어를 선택하세요."></textarea>
-<p id="publicMessage" role="status"></p>
-</section>
-</details>
+:root{color-scheme:dark;font-family:system-ui,"Malgun Gothic",sans-serif;background:#0d1524;color:#e8eef9}
+*{box-sizing:border-box}
+body{margin:0}
+.shell{max-width:1470px;margin:0 auto;padding:24px}
+header{display:flex;align-items:center;justify-content:space-between;gap:22px;margin-bottom:22px}
+h1{font-size:24px;letter-spacing:-.5px;margin:0 0 7px}
+h2{font-size:17px;margin:0 0 10px}
+h3{font-size:14px;margin:0}
+p{font-size:13px;line-height:1.55;color:#a9b9d0;margin:5px 0 12px}
+button,input,select,textarea{font:inherit}
+button{background:#456ec7;color:#fff;border:1px solid transparent;border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+button:hover:not(:disabled){filter:brightness(1.13)}
+button:disabled{opacity:.45;cursor:default}
+button.secondary{background:#243650;border-color:#344b70}
+input[type="search"],input[type="number"],select,textarea{background:#101c30;border:1px solid #344866;color:#e8eef9;border-radius:8px;padding:9px 10px;min-width:0;width:100%;outline-offset:2px}
+input[type="checkbox"]{accent-color:#759cfd;flex:none}
+label{font-size:12px;color:#c2d0e4}
+small{font-size:12px;color:#9caec9}
+.panel{border:1px solid #2d3d59;background:#162136;border-radius:14px;padding:18px;margin-bottom:16px}
+.muted{color:#9badc7}
+.status{font-size:12px;white-space:pre-wrap}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.header-info{display:flex;flex-direction:column;gap:7px}
+.category-bar{display:flex;align-items:flex-start;gap:16px;justify-content:space-between;flex-wrap:wrap}
+.category-list{display:flex;gap:9px;flex-wrap:wrap}
+.category-toggle{display:flex;align-items:center;gap:8px;margin:0;padding:10px 13px;border-radius:10px;border:1px solid #3c4d6b;background:#101b30;cursor:pointer}
+.category-toggle:has(input:checked){background:#22395e;border-color:#527abd}
+.category-toggle input{margin:0}
+.category-toggle span{font-size:13px;font-weight:600}
+.category-toggle small{margin-left:5px}
+.tab-bar{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid #33435f;padding-bottom:10px;margin-bottom:18px}
+.tab-bar button{background:transparent;color:#b7c8e1;border-color:#2d4263}
+.tab-bar button[aria-selected="true"]{background:#355fa5;color:#fff;border-color:#5d84c6}
+.tab-content{min-width:0}
+.tab-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.tab-heading p{margin-bottom:0}
+.tab-heading small{white-space:nowrap}
+.work-grid{display:grid;grid-template-columns:minmax(245px,315px) minmax(0,1fr);gap:18px;align-items:start}
+.filters{border:1px solid #34435f;background:#111d31;border-radius:11px;padding:14px}
+.filters h3{margin:0 0 11px}
+.filter-fields{display:grid;gap:12px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dual{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.multi-filter{border:1px solid #31435d;border-radius:8px}
+.multi-filter summary{padding:10px;cursor:pointer;font-size:12px;color:#d9e5fa;display:flex;justify-content:space-between;gap:8px}
+.choice-list{border-top:1px solid #31435d;padding:8px;max-height:175px;overflow-y:auto}
+.choice-list label{display:flex;align-items:center;gap:8px;padding:5px 3px;cursor:pointer}
+.filter-reset{width:100%;margin-top:12px}
+.results{min-width:0}
+.result-top{display:flex;gap:10px;align-items:end;justify-content:space-between;flex-wrap:wrap}
+.sort-fields{display:flex;gap:8px;flex-wrap:wrap}
+.sort-fields .field{min-width:122px}
+.selection-actions{display:flex;flex-wrap:wrap;gap:7px;margin:11px 0}
+.count{font-size:13px;font-weight:600;color:#d7e7ff;margin:10px 0}
+.table-scroll{overflow:auto;max-height:650px;border:1px solid #34435f;border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{text-align:left;padding:11px 10px;border-bottom:1px solid #2c3b55;vertical-align:middle}
+th{background:#1e2d46;position:sticky;top:0;z-index:1;color:#c3d5ed}
+tr:last-child td{border-bottom:0}
+tr:hover td{background:#1c2b43}
+td.title-cell{min-width:190px}
+.item-name{font-weight:600;line-height:1.4}
+.item-meta{display:block;margin-top:4px;font-size:11px;color:#9eafc6}
+.item-detail{min-width:230px;max-width:580px;line-height:1.6;overflow-wrap:anywhere}
+td:first-child,th:first-child{width:44px;text-align:center}
+.pagination{display:flex;gap:10px;align-items:center;justify-content:end;margin-top:10px}
+.pagination small{min-width:70px;text-align:center}
+.export-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.export-counts{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
+.count-chip{background:#21324d;border:1px solid #375172;border-radius:16px;padding:6px 10px;font-size:12px}
+.export-options{display:flex;align-items:end;gap:14px;flex-wrap:wrap}
+.export-options .field{min-width:190px}
+.export-checkboxes{display:flex;gap:15px;flex-wrap:wrap;margin:14px 0}
+.export-checkboxes label{display:flex;gap:7px;align-items:center}
+.export-actions{display:flex;gap:8px;flex-wrap:wrap}
+#previewText{height:170px;margin-top:12px;resize:vertical;font:12px/1.5 ui-monospace,Consolas,monospace}
+.preferences{margin-top:15px;border:1px solid #354767;border-radius:10px;padding:10px 14px}
+.preferences summary{cursor:pointer;font-size:13px;font-weight:600}
+.preferences textarea{height:85px;resize:vertical;margin:10px 0;font:13px/1.45 system-ui}
+.hidden{display:none!important}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid #82acff}
+@media(max-width:900px){.work-grid{grid-template-columns:1fr}.filters{display:block}.filter-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.shell{padding:13px}header{align-items:flex-start;flex-direction:column}.category-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}.filter-fields{grid-template-columns:1fr}.sort-fields{width:100%}.sort-fields .field{flex:1}.panel{padding:13px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="header-info">
+      <h1>HSR-CHA-Optimizer</h1>
+      <p>실제 보유 계정 자료 검색 · 선택 · AI 전달용 / 읽기용 파일 출력</p>
+      <small id="accountStatus" role="status">계정 데이터를 확인하는 중…</small>
+    </div>
+    <div class="toolbar" id="desktopToolbar" hidden>
+      <button id="syncGame" type="button" class="secondary">게임 자료 갱신</button>
+      <button id="importArchive" type="button">계정 JSON 가져오기</button>
+    </div>
+  </header>
+
+  <section class="panel" aria-labelledby="groupTitle">
+    <div class="category-bar">
+      <div>
+        <h2 id="groupTitle">표시할 자료 종류</h2>
+        <p>여러 종류를 체크할 수 있습니다. 종류마다 검색·필터·정렬·선택 상태는 서로 영향을 주지 않습니다.</p>
+      </div>
+      <div class="toolbar">
+        <button id="enableAllGroups" type="button" class="secondary">종류 전체 표시</button>
+        <button id="disableAllGroups" type="button" class="secondary">종류 전체 해제</button>
+      </div>
+    </div>
+    <div class="category-list" id="groupCheckboxes" aria-label="표시할 자료 종류"></div>
+  </section>
+
+  <section class="panel">
+    <nav id="tabBar" class="tab-bar" role="tablist" aria-label="자료 종류별 독립 목록"></nav>
+    <div id="tabPanels"></div>
+    <p id="noActiveGroups" class="hidden">표시할 자료 종류를 하나 이상 체크하세요.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="exportTitle">
+    <div class="export-top">
+      <div><h2 id="exportTitle">선택 항목 출력</h2><p>위의 각 탭에서 선택한 항목만 합쳐 출력합니다. 체크 해제한 자료 종류는 출력에 포함하지 않습니다.</p></div>
+      <button id="clearSelections" type="button" class="secondary">모든 항목 선택 해제</button>
+    </div>
+    <div id="exportCounts" class="export-counts"></div>
+    <div class="export-options">
+      <div class="field">
+        <label for="exportFormat">출력 형식</label>
+        <select id="exportFormat">
+          <option value="json">JSON · AI 분석용 상세 원본</option>
+          <option value="markdown">Markdown · 읽기용 표 + 상세 원본</option>
+          <option value="html">HTML · 브라우저에서 읽기 / 인쇄</option>
+        </select>
+      </div>
+    </div>
+    <div class="export-checkboxes">
+      <label><input type="checkbox" id="includeGacha">가챠 재화 포함</label>
+      <label><input type="checkbox" id="includeWarp">기존 수동 천장 기록 포함</label>
+      <label><input type="checkbox" id="includeSupplemental" checked>개인 조건·보완 능력치 포함</label>
+      <label><input type="checkbox" id="includeReference" checked>선택한 장비의 원본 효과 포함</label>
+    </div>
+    <div class="export-actions">
+      <button id="previewExport" type="button" class="secondary">미리보기</button>
+      <button id="saveExport" type="button">선택 항목 파일 저장</button>
+    </div>
+    <textarea id="previewText" readonly placeholder="선택한 자료를 미리 볼 수 있습니다. 미리보기는 앞부분만 표시하며, 저장 시 전체 내용이 출력됩니다."></textarea>
+    <p id="exportStatus" class="status" role="status">출력할 항목을 선택하세요.</p>
+    <details class="preferences" id="preferencesPanel">
+      <summary>AI 분석 시 고려할 개인 조건</summary>
+      <p>예: 사용하지 않을 캐릭터, 장비 재배치 제한, 재화 사용 원칙. 개인 계정에만 저장합니다.</p>
+      <label for="analysisPreferences">개인 조건</label>
+      <textarea id="analysisPreferences" maxlength="4000" placeholder="사용자가 원하는 파티·육성·가챠 제약 조건"></textarea>
+      <button id="savePreferences" type="button" class="secondary">개인 조건 저장</button>
+      <small id="preferenceStatus" class="status"></small>
+    </details>
+  </section>
 </div>
 <script type="module">
-const el = id => document.getElementById(id);
 const desktop = window.hsrDesktop ?? null;
-const selected = new Set();
-let all = [], output = '', outputFormat = 'json';
-let publicOutput = '', publicOutputFormat = 'json';
-let sheetRecords = {}, sheetFields = {}, sheetComparisons = {};
-let warpPools = {}, warpRecords = {};
-let inventoryLoaded = false;
-el('warpPanel').hidden = !desktop;
-el('enemyPrepareArea').hidden = !desktop;
-
-function renderWarpPanel() {
-  if (!desktop) return;
-  const type = el('warpType').value;
-  const record = warpRecords[type];
-  const def = warpPools[type];
-  el('warpPity').max = def?.maxPity ?? 90;
-  el('warpPity').value = record?.pity ?? '';
-  el('warpGuarantee').disabled = !def?.guarantee;
-  el('warpGuarantee').value = def?.guarantee ? (record?.guarantee ?? 'unknown') : 'unknown';
-  el('warpStatus').textContent = record
-    ? '수동 입력 기록: ' + record.pity + '스택 · ' + record.recordedAt
-    : '선택한 종류의 저장된 기록이 없습니다.';
-}
-function renderWarpOptions(preserve = true) {
-  if (!desktop) return;
-  const input = el('warpType');
-  const current = preserve ? input.value : '';
-  input.replaceChildren();
-  for (const [value, detail] of Object.entries(warpPools)) {
-    const option = document.createElement('option');
-    option.value = value;
-    option.textContent = detail.name;
-    input.append(option);
-  }
-  if (current && warpPools[current]) input.value = current;
-  renderWarpPanel();
-}
-el('sheetEditor').hidden = !desktop;
-
-function renderSheetComparison(id) {
-  const comparison = sheetComparisons[id] ?? null;
-  const panel = el('sheetComparison');
-  panel.hidden = !comparison;
-  if (!comparison) return;
-  el('sheetCompareSummary').textContent =
-    '수동 입력과 공개 전시 계산값 비교 (' + comparison.fieldsCompared + '개 항목)';
-  const stale = [];
-  if (comparison.sameCharacterLevelAsCurrentScan === false) stale.push('레벨 다름');
-  if (comparison.sameEidolonAsCurrentScan === false) stale.push('성혼 단계 다름');
-  el('sheetCompareNote').textContent = (stale.length ? '확인 필요: ' + stale.join(', ') + '. ' : '') +
-    comparison.note + ' · 수동 입력: ' + comparison.manualRecordedAt +
-    ' · 공개 전시 파일 가져오기: ' + comparison.showcaseImportedAt +
-    ' (원본 촬영 시각 확인 불가)';
-  const body = el('sheetCompareRows');
-  body.replaceChildren();
-  for (const item of comparison.rows) {
-    const tr = document.createElement('tr');
-    const unit = item.unit === '%' ? '%' : '';
-    const values = [
-      item.name,
-      String(item.observed) + unit,
-      item.publicCalculated === null ? '비교 불가' : String(item.publicCalculated) + unit,
-      item.difference === null ? '-' : String(item.difference) + unit,
-    ];
-    for (const val of values) {
-      const td = document.createElement('td');
-      td.textContent = val;
-      tr.append(td);
-    }
-    body.append(tr);
-  }
-}
-
-function renderSheetInputs() {
-  const id = el('manualStatCharacter').value;
-  const entry = sheetRecords[id] ?? {};
-  const area = el('sheetFields');
-  area.replaceChildren();
-  renderSheetComparison(id);
-  el('sheetStatus').textContent = !id
-    ? '캐릭터를 선택하면 게임 화면에서 확인한 능력치를 입력할 수 있습니다.'
-    : (entry.manual ? '수동 입력 존재 · ' : '수동 입력 없음 · ') +
-      (entry.showcase ? '공개 전시 파일 존재' : '공개 전시 파일 없음');
-  for (const [field, meta] of Object.entries(sheetFields)) {
-    const label = document.createElement('label');
-    const title = document.createElement('span');
-    title.textContent = meta.name + (meta.unit === '%' ? ' (%)' : '');
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.step = 'any';
-    input.min = 0;
-    input.dataset.stat = field;
-    input.placeholder = '미입력';
-    input.value = entry.manual?.values?.[field] ?? '';
-    input.disabled = !id;
-    label.append(title, input);
-    area.append(label);
-  }
-}
-
-function renderSheetEditor(preserveSelection) {
-  if (!desktop) return;
-  const chooser = el('manualStatCharacter');
-  const previous = preserveSelection ? chooser.value : '';
-  chooser.replaceChildren();
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = '캐릭터를 선택하세요';
-  chooser.append(placeholder);
-  for (const item of all) {
-    const option = document.createElement('option');
-    option.value = item.id;
-    option.textContent = item.name + ' (Lv.' + item.level + ')';
-    chooser.append(option);
-  }
-  if (previous && all.some(item => item.id === previous)) chooser.value = previous;
-  renderSheetInputs();
-}
-const filterGroups = [
-  { field: 'setIds', source: 'sets', target: 'candidateSetChoices', counter: 'candidateSetCount' },
-  { field: 'slots', source: 'slots', target: 'candidateSlotChoices', counter: 'candidateSlotCount' },
-  { field: 'mainstats', source: 'mainstats', target: 'candidateMainChoices', counter: 'candidateMainCount' },
-  { field: 'substats', source: 'substats', target: 'candidateSubChoices', counter: 'candidateSubCount' },
+const $ = id => document.getElementById(id);
+const GROUPS = [
+  { id:'characters', label:'캐릭터', hint:'캐릭터 이름·ID 검색', sorts:[['name','이름'],['rarity','성급'],['level','레벨'],['eidolon','성혼']] },
+  { id:'lightCones', label:'광추', hint:'광추 이름·ID·장착자 검색', sorts:[['name','이름'],['rarity','성급'],['level','레벨'],['superimposition','중첩'],['equipped','장착 상태']] },
+  { id:'relics', label:'유물', hint:'유물 세트·ID·장착자 검색', sorts:[['name','세트 이름'],['rarity','성급'],['level','강화 레벨'],['mainstat','주옵션'],['equipped','장착 상태']] },
+  { id:'ornaments', label:'차원 장신구', hint:'장신구 세트·ID·장착자 검색', sorts:[['name','세트 이름'],['rarity','성급'],['level','강화 레벨'],['mainstat','주옵션'],['equipped','장착 상태']] },
+  { id:'materials', label:'재료·티켓', hint:'재료 이름·ID 검색', sorts:[['name','이름'],['count','수량']] },
 ];
-
-function updateFilterVisibility() {
-  el('candidateFilterArea').hidden = el('candidateMode').value === 'none';
+const PAGE_SIZE = 50;
+const groupsById = Object.fromEntries(GROUPS.map(g=>[g.id,g]));
+const enabled = new Set(GROUPS.map(g=>g.id));
+const views = new Map();
+let activeGroup='characters';
+let catalog=null;
+let accountState=null;
+const field = (parent,name) => parent.querySelector('[data-field="'+name+'"]');
+function make(tag,cls='',txt=''){
+  const element=document.createElement(tag);
+  if(cls)element.className=cls;
+  if(txt)element.textContent=txt;
+  return element;
 }
-
-function renderRelicFilters(options = {}) {
-  for (const group of filterGroups) {
-    const container = el(group.target);
-    const counter = el(group.counter);
-    container.replaceChildren();
-    counter.textContent = '전체';
-    for (const choice of options[group.source] ?? []) {
-      const label = document.createElement('label');
-      label.className = 'candidate-filter-option';
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.value = choice.value;
-      checkbox.addEventListener('change', () => {
-        const count = container.querySelectorAll('input:checked').length;
-        counter.textContent = count ? count + '개 선택' : '전체';
-        invalidateOutput();
-      });
-      const name = document.createElement('span');
-      name.textContent = choice.label;
-      const amount = document.createElement('small');
-      amount.textContent = choice.count.toLocaleString();
-      label.append(checkbox, name, amount);
-      container.append(label);
-    }
-    if (!container.childElementCount) {
-      const empty = document.createElement('p');
-      empty.textContent = '선택 가능한 항목 없음';
-      container.append(empty);
-    }
+function writeOptions(select,values){
+  for(const [value,name] of values){const option=new Option(name,value);select.add(option);}
+}
+function numericInput(name,placeholder='제한 없음'){
+  const input=make('input');input.type='number';input.min='0';input.step='any';
+  input.placeholder=placeholder;input.dataset.field=name;
+  return input;
+}
+function labeledInput(wrapper,labelName,control){
+  const wrap=make('label','field');
+  wrap.append(make('span','',labelName),control);
+  wrapper.append(wrap);return control;
+}
+function singleSelect(name,entries){
+  const select=make('select');select.dataset.field=name;
+  writeOptions(select,entries);return select;
+}
+function appendMulti(wrapper,name,labelName,values){
+  const details=make('details','multi-filter');
+  const summary=make('summary','',labelName);
+  const count=make('span','muted','전체');count.dataset.countOf=name;summary.append(count);
+  const choices=make('div','choice-list');
+  for(const [key,title] of values){
+    const line=make('label');const check=make('input');check.type='checkbox';
+    check.value=String(key);check.dataset.multi=name;
+    line.append(check,make('span','',title));choices.append(line);
   }
+  details.append(summary,choices);wrapper.append(details);
 }
-
-function selectedRelicFilters() {
-  return Object.fromEntries(filterGroups.map(group => [
-    group.field,
-    [...el(group.target).querySelectorAll('input:checked')].map(node => node.value),
-  ]));
-}
-
-function renderGameChanges(report) {
-  const panel = el('syncHistory');
-  panel.hidden = !report;
-  if (!report) return;
-  const initial = report.status === 'initial';
-  const counts = report.totals ?? {};
-  const summary = initial
-    ? '게임 데이터 기준 스냅샷 저장 · ' + (report.tables?.length ?? 0) + '종'
-    : '게임 데이터 변경 내역 · 추가 ' + (counts.added ?? 0) +
-      ' / 삭제 ' + (counts.removed ?? 0) + ' / 내용 변경 ' + (counts.modified ?? 0);
-  el('syncHistorySummary').textContent = summary;
-  const previousVersion = report.previous?.version ?? '최초 동기화';
-  const currentVersion = report.current?.version ?? '-';
-  el('syncHistoryInfo').textContent = previousVersion + ' → ' + currentVersion +
-    ' · 동기화 ' + (report.syncedAt ?? '시각 미확인') +
-    (initial ? ' · 이전 자료가 없어 변경 내용을 비교하지 않았습니다.' : '');
-  const body = el('syncHistoryRows');
-  body.replaceChildren();
-  for (const item of report.tables ?? []) {
-    if (initial || (item.added === 0 && item.removed === 0 && item.modified === 0)) continue;
-    const tr = document.createElement('tr');
-    for (const value of [
-      item.filename,
-      item.previousCount ?? '-',
-      item.currentCount,
-      item.added, item.removed, item.modified,
-      [
-        item.sampleIds?.added?.length ? '추가: ' + item.sampleIds.added.join(', ') : '',
-        item.sampleIds?.removed?.length ? '삭제: ' + item.sampleIds.removed.join(', ') : '',
-        item.sampleIds?.modified?.length ? '수정: ' + item.sampleIds.modified.join(', ') : '',
-      ].filter(Boolean).join(' / ') || '-',
-    ]) {
-      const td = document.createElement('td');
-      td.textContent = String(value);
-      tr.append(td);
-    }
-    body.append(tr);
+function optionsFor(rows,property,labelProperty){
+  const found=new Map();
+  for(const row of rows){
+    const key=row[property];
+    if(key!=null && key!=='')found.set(String(key),String(row[labelProperty]??key));
   }
-  if (!body.childElementCount) {
-    const tr = document.createElement('tr');
-    const td = document.createElement('td');
-    td.colSpan = 7;
-    td.textContent = initial ? '비교 기준이 저장됐습니다.' : '변경된 테이블이 없습니다.';
-    tr.append(td);
-    body.append(tr);
-  }
+  return [...found.entries()].sort((a,b)=>a[1].localeCompare(b[1],'ko',{numeric:true}));
 }
-
-function invalidateOutput() {
-  if (!output) return;
-  output = '';
-  el('result').value = '';
-  el('copy').disabled = true;
-  el('save').disabled = true;
-  el('message').textContent = '설정이 변경됐습니다. 자료를 다시 생성하세요.';
-}
-
-el('desktopToolbar').hidden = !desktop;
-
-function render() {
-  const q = el('filter').value.trim().toLocaleLowerCase();
-  el('roster').replaceChildren();
-  const matches = all.filter(x => x.name.toLocaleLowerCase().includes(q));
-  if (!matches.length) {
-    const empty = document.createElement('p');
-    empty.style.padding = '12px';
-    empty.textContent = all.length ? '검색 결과가 없습니다.' : '등록된 캐릭터가 없습니다. 계정 JSON을 가져오세요.';
-    el('roster').append(empty);
-    return;
+function statOptions(rows){
+  const found=new Map();
+  for(const row of rows)for(const stat of row.substats??[]){
+    if(stat.key)found.set(stat.key,stat.name??stat.key);
   }
-  for (const c of matches) {
-    const label = document.createElement('label');
-    label.className = 'person';
-    const check = document.createElement('input');
-    check.type = 'checkbox';
-    check.checked = selected.has(c.id);
-    check.addEventListener('change', () => {
-      if (check.checked) selected.add(c.id);
-      else selected.delete(c.id);
-      invalidateOutput();
-    });
-    const name = document.createElement('span');
-    name.textContent = c.name;
-    const info = document.createElement('small');
-    info.textContent = 'Lv.' + c.level + ' · ' + c.eidolon + '돌';
-    label.append(check, name, info);
-    el('roster').append(label);
+  return [...found.entries()].sort((a,b)=>a[1].localeCompare(b[1],'ko'));
+}
+function filtersFor(group,rows,wrapper){
+  const multi=(name,labelName,list)=>appendMulti(wrapper,name,labelName,list);
+  const range=(labelName,name)=>labeledInput(wrapper,labelName,numericInput(name));
+  if(group.id!=='materials')multi('rarities','성급',optionsFor(rows,'rarity').map(([v,n])=>[v,n+'성']));
+  if(group.id==='characters'){
+    multi('elements','속성',optionsFor(rows,'element','elementName'));
+    multi('paths','운명의 길',optionsFor(rows,'path','pathName'));
+    range('최소 레벨','minLevel');range('최대 레벨','maxLevel');
+    range('최소 성혼','minEidolon');
+  }else if(group.id==='lightCones'){
+    multi('paths','운명의 길',optionsFor(rows,'path','pathName'));
+    range('최소 레벨','minLevel');range('최대 레벨','maxLevel');
+    range('최소 중첩','minSuperimposition');
+    labeledInput(wrapper,'장착 상태',singleSelect('equipped',[
+      ['all','전체'],['owned','장착'],['unequipped','미장착'],['unknown-character-id','장착자 미확인']]));
+    labeledInput(wrapper,'잠금',singleSelect('locked',[
+      ['all','전체'],['true','잠금'],['false','잠금 해제']]));
+  }else if(group.id==='relics'||group.id==='ornaments'){
+    multi('sets','세트',optionsFor(rows,'setId','setName'));
+    multi('slots','부위',optionsFor(rows,'slot'));
+    multi('mainstats','주옵션',optionsFor(rows,'mainstat','mainstatName'));
+    const options=statOptions(rows);
+    multi('substats','현재 부옵션 · 모두 포함',options);
+    range('최소 강화 레벨','minLevel');range('최대 강화 레벨','maxLevel');
+    const statSelect=singleSelect('statKey',[['','제한 없음'],...options]);
+    labeledInput(wrapper,'특정 부옵션',statSelect);
+    range('부옵션 최소값','minStatValue');
+    range('부옵션 최소 강화 횟수','minStatCount');
+    labeledInput(wrapper,'장착 상태',singleSelect('equipped',[
+      ['all','전체'],['owned','장착'],['unequipped','미장착'],['unknown-character-id','장착자 미확인']]));
+    labeledInput(wrapper,'잠금',singleSelect('locked',[
+      ['all','전체'],['true','잠금'],['false','잠금 해제']]));
+    labeledInput(wrapper,'폐기 표시',singleSelect('discard',[
+      ['all','전체'],['true','표시됨'],['false','표시 안 됨']]));
+  }else{
+    range('최소 보유 수량','minCount');
   }
 }
-
-async function refreshState() {
-  const state = desktop ? await desktop.getState() : await fetch('/api/state').then(r => r.json());
-  renderGameChanges(state.gameChanges);
-  const enemy = state.enemyData;
-  if (desktop) {
-    el('enemyDataStatus').textContent = enemy?.prepared
-      ? '원본 4.7.0 · ' + enemy.total + '개 · 한국어 이름 ' +
-        enemy.nameResolved + '개 연결 / ' + enemy.nameUnresolved + '개 미확인'
-      : '적·보스 별도 자료 미준비';
+function createView(group,rows){
+  const root=make('section','tab-content');root.id='panel-'+group.id;
+  root.setAttribute('role','tabpanel');root.setAttribute('aria-label',group.label);
+  const heading=make('div','tab-heading');
+  const intro=make('div');
+  intro.append(make('h2','',group.label+' 목록'),
+    make('p','','이 탭의 검색·정렬·선택은 다른 자료 종류와 독립적입니다.'));
+  const groupCount=make('small','','전체 '+rows.length+'개');
+  heading.append(intro,groupCount);root.append(heading);
+  const grid=make('div','work-grid');
+  const filters=make('aside','filters');
+  filters.append(make('h3','','검색 및 필터'));
+  const fields=make('div','filter-fields');
+  const search=make('input');search.type='search';search.placeholder=group.hint;search.dataset.field='query';
+  labeledInput(fields,'검색어',search);
+  filtersFor(group,rows,fields);filters.append(fields);
+  const reset=make('button','secondary filter-reset','이 탭 필터 초기화');
+  reset.type='button';filters.append(reset);
+  const results=make('div','results');
+  const top=make('div','result-top');
+  const count=make('div','count','검색 결과 확인 중…');
+  const sort=make('div','sort-fields');
+  const sortSelect=singleSelect('sortBy',group.sorts);
+  labeledInput(sort,'정렬 기준',sortSelect);
+  const sortDirection=singleSelect('direction',[['asc','오름차순'],['desc','내림차순']]);
+  labeledInput(sort,'정렬 방향',sortDirection);
+  top.append(count,sort);results.append(top);
+  const actions=make('div','selection-actions');
+  const actionsSpec=[
+    ['selectFiltered','검색 결과 모두 선택',false],
+    ['clearFiltered','검색 결과 선택 해제',true],
+    ['selectAll','이 종류 전체 선택',true],
+    ['clearAll','이 종류 선택 해제',true],
+  ];
+  for(const [action,caption,secondary] of actionsSpec){
+    const button=make('button',secondary?'secondary':'',caption);
+    button.type='button';button.dataset.action=action;actions.append(button);
   }
-  all = state.characters ?? [];
-  const fullAccountReady = desktop ? state.ready : !!(state.version && state.characters?.length);
-  el('fullAccountSummary').textContent = fullAccountReady
-    ? '스캔 기준: 캐릭터 ' + (state.characters?.length ?? 0) + '명 · 광추 ' +
-      state.lightCones + '개 · 유물 ' + state.relics +
-      '개 · 모든 장착/미장착 장비 포함 (후보 필터 미적용)'
-    : '게임 데이터 및 계정 JSON을 먼저 준비하세요.';
-  el('fullSaveSingle').disabled = !fullAccountReady;
-  el('fullSaveFolder').disabled = !fullAccountReady;
-  if (desktop) el('analysisPreferences').value = state.analysisPreferences?.text ?? '';
-  sheetRecords = state.characterStats ?? {};
-  sheetFields = state.characterStatFields ?? {};
-  sheetComparisons = state.characterStatComparisons ?? {};
-  warpPools = state.warpPools ?? {};
-  warpRecords = state.warpState?.pools ?? {};
-  selected.clear();
-  invalidateOutput();
-  const gameText = state.version ?? '미설치';
-  el('stats').textContent = '게임 ' + gameText + ' · 캐릭터 ' + all.length +
-    ' · 광추 ' + state.lightCones + ' · 유물 ' + state.relics;
-  renderRelicFilters(state.candidateFilterOptions);
-  updateFilterVisibility();
-  const unassigned = state.unequippedRelics;
-  el('candidateHint').textContent = unassigned == null
-    ? '후보가 많으면 출력 파일이 커집니다. 제한 개수를 지정해도 우열을 판단하지 않고 원본 순서대로 포함합니다.'
-    : '미장착 유물 ' + unassigned.toLocaleString() +
-      '개 · 전체 포함 시 출력 파일이 커집니다. 개수 제한은 원본 순서 기준이며 점수·순위는 계산하지 않습니다.';
-  if (desktop) {
-    el('setupStatus').textContent = state.ready
-      ? '계정 자료 준비 완료 · 최신 스캔 파일은 언제든 다시 가져올 수 있습니다.'
-      : (!state.gameReady ? '한국어 게임 데이터 동기화 필요 · ' : '') +
-        (!state.accountReady ? 'Reliquary Archiver JSON 가져오기 필요' : '');
+  results.append(actions);
+  const scroll=make('div','table-scroll');
+  const table=make('table');
+  const thead=make('thead');const hrow=make('tr');
+  for(const title of ['선택','이름 / 원본 ID','레벨 / 분류','장착 / 주요 옵션']){
+    hrow.append(make('th','',title));
   }
-  render();
-  renderSheetEditor(true);
-  renderWarpOptions(true);
-  if (inventoryLoaded) await loadInventoryExplorer();
+  thead.append(hrow);
+  const tbody=make('tbody');table.append(thead,tbody);scroll.append(table);results.append(scroll);
+  const pagination=make('div','pagination');
+  const prev=make('button','secondary','이전');prev.dataset.action='prev';prev.type='button';
+  const pageLabel=make('small','','1 / 1');
+  const next=make('button','secondary','다음');next.dataset.action='next';next.type='button';
+  pagination.append(prev,pageLabel,next);results.append(pagination);
+  grid.append(filters,results);root.append(grid);
+  const view={group,root,rows,filters,fields,count,tbody,pageLabel,prev,next,selected:new Set(),filtered:[],page:0};
+  root.addEventListener('input',event=>{
+    if(event.target.matches('[data-field]')||event.target.matches('[data-multi]')){
+      view.page=0;renderView(view);
+    }
+  });
+  root.addEventListener('change',event=>{
+    if(event.target.matches('[data-field]')||event.target.matches('[data-multi]')){
+      view.page=0;renderView(view);
+    }
+  });
+  reset.addEventListener('click',()=>{
+    for(const input of filters.querySelectorAll('input')){
+      if(input.type==='checkbox')input.checked=false;else input.value='';
+    }
+    for(const select of filters.querySelectorAll('select'))select.selectedIndex=0;
+    sortSelect.selectedIndex=0;sortDirection.selectedIndex=0;
+    view.page=0;renderView(view);
+  });
+  actions.addEventListener('click',event=>{
+    const action=event.target.dataset.action;
+    if(!action)return;
+    if(action==='selectFiltered')for(const item of view.filtered)view.selected.add(item.key);
+    if(action==='clearFiltered')for(const item of view.filtered)view.selected.delete(item.key);
+    if(action==='selectAll')for(const item of view.rows)view.selected.add(item.key);
+    if(action==='clearAll')view.selected.clear();
+    renderView(view);renderExportSummary();
+  });
+  prev.addEventListener('click',()=>{view.page--;renderView(view);});
+  next.addEventListener('click',()=>{view.page++;renderView(view);});
+  return view;
 }
-await refreshState();
-el('fullSaveFolder').hidden = !desktop;
-el('analysisPreferencesDetails').hidden = !desktop;
-el('fullSaveSingle').addEventListener('click', async () => {
-  el('fullSaveSingle').disabled = true;
-  el('fullExportStatus').textContent = '전체 계정 자료를 확인하고 저장합니다…';
-  try {
-    if (desktop) {
-      const saved = await desktop.exportFullAccount('single');
-      el('fullExportStatus').textContent = saved
-        ? '전체 계정 JSON 저장 완료: 캐릭터 ' + saved.counts.exported.characters +
-          '명 · 광추 ' + saved.counts.exported.lightCones +
-          '개 · 유물 ' + saved.counts.exported.relics + '개'
-        : '저장을 취소했습니다.';
-    } else {
-      const response = await fetch('/api/full-account', { method: 'POST' });
-      if (!response.ok) throw new Error(await response.text());
-      const blob = await response.blob();
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.href = url; link.download = 'hsr-account-complete.json'; link.click();
-      URL.revokeObjectURL(url);
-      el('fullExportStatus').textContent = '전체 계정 JSON 다운로드를 요청했습니다.';
-    }
-  } catch (error) {
-    el('fullExportStatus').textContent = '전체 계정 저장 실패: ' + error.message;
-  } finally { el('fullSaveSingle').disabled = false; }
-});
-if (desktop) {
-  el('fullSaveFolder').addEventListener('click', async () => {
-    el('fullSaveFolder').disabled = true;
-    el('fullExportStatus').textContent = '전체 인벤토리를 분할 저장합니다…';
-    try {
-      const saved = await desktop.exportFullAccount('folder');
-      el('fullExportStatus').textContent = saved
-        ? '분할 저장 완료: ' + saved.fileCount + '개 파일 · 유물 ' +
-          saved.counts.exported.relics + '개 전체 포함 · ' + saved.path
-        : '저장을 취소했습니다.';
-    } catch (error) {
-      el('fullExportStatus').textContent = '분할 저장 실패: ' + error.message;
-    } finally { el('fullSaveFolder').disabled = false; }
-  });
-  el('analysisPreferencesSave').addEventListener('click', async () => {
-    el('analysisPreferencesSave').disabled = true;
-    try {
-      const updated = await desktop.saveAnalysisPreferences(el('analysisPreferences').value);
-      el('fullExportStatus').textContent = '개인 분석 조건 저장 완료: ' + updated.updatedAt;
-    } catch (error) {
-      el('fullExportStatus').textContent = '개인 분석 조건 저장 실패: ' + error.message;
-    } finally { el('analysisPreferencesSave').disabled = false; }
-  });
-}
-el('filter').addEventListener('input', render);
-el('candidateMode').addEventListener('change', () => {
-  updateFilterVisibility();
-  invalidateOutput();
-});
-for (const id of ['minRarity','candidateLimit','resources','format']) {
-  el(id).addEventListener('change', invalidateOutput);
-}
-
-if (desktop) {
-  desktop.onEnemyProgress(p => {
-    el('enemyDataStatus').textContent =
-      '적·보스 원본 다운로드 ' + p.done + '/' + p.total + ': ' + p.filename;
-  });
-  el('prepareEnemies').addEventListener('click', async () => {
-    el('prepareEnemies').disabled = true;
-    el('enemyDataStatus').textContent = '적·보스 원본 다운로드 시작 (대용량 한국어 텍스트 포함)';
-    try {
-      const result = await desktop.prepareEnemies();
-      await refreshState();
-      el('publicMessage').textContent = '적·보스 자료 준비 완료: ' +
-        result.total + '개 / 한국어 이름 연결 ' + result.nameResolved + '개';
-    } catch (error) {
-      el('enemyDataStatus').textContent = '적·보스 자료 준비 실패: ' + error.message;
-    } finally { el('prepareEnemies').disabled = false; }
-  });
-  el('warpType').addEventListener('change', renderWarpPanel);
-  el('warpSave').addEventListener('click', async () => {
-    const name = el('warpType').value;
-    const raw = el('warpPity').value.trim();
-    if (!raw) { el('warpStatus').textContent = '스택을 입력하세요. 미확인은 기록하지 않습니다.'; return; }
-    const input = { pity: Number(raw), guarantee: el('warpGuarantee').value };
-    el('warpSave').disabled = true;
-    try {
-      await desktop.saveWarpPool(name, input);
-      await refreshState();
-      el('warpStatus').textContent = '워프 수동 기록 저장 완료';
-    } catch (error) {
-      el('warpStatus').textContent = '워프 기록 저장 실패: ' + error.message;
-    } finally { el('warpSave').disabled = false; }
-  });
-  el('warpClear').addEventListener('click', async () => {
-    el('warpClear').disabled = true;
-    try {
-      await desktop.clearWarpPool(el('warpType').value);
-      await refreshState();
-      el('warpStatus').textContent = '선택한 워프 기록 삭제 완료';
-    } catch (error) {
-      el('warpStatus').textContent = '워프 기록 삭제 실패: ' + error.message;
-    } finally { el('warpClear').disabled = false; }
-  });
-  el('manualStatCharacter').addEventListener('change', renderSheetInputs);
-  el('manualSheetSave').addEventListener('click', async () => {
-    const id = el('manualStatCharacter').value;
-    if (!id) { el('message').textContent = '능력치를 저장할 캐릭터를 선택하세요.'; return; }
-    const values = {};
-    for (const input of el('sheetFields').querySelectorAll('input[data-stat]')) {
-      if (input.value.trim()) values[input.dataset.stat] = Number(input.value);
-    }
-    el('manualSheetSave').disabled = true;
-    try {
-      await desktop.saveManualSheet(id, values);
-      await refreshState();
-      el('sheetStatus').textContent = '게임 화면에서 입력한 능력치를 로컬에 저장했습니다.';
-    } catch (error) {
-      el('sheetStatus').textContent = '능력치 저장 실패: ' + error.message;
-    } finally {
-      el('manualSheetSave').disabled = false;
-    }
-  });
-  el('manualSheetClear').addEventListener('click', async () => {
-    const id = el('manualStatCharacter').value;
-    if (!id) return;
-    el('manualSheetClear').disabled = true;
-    try {
-      await desktop.clearManualSheet(id);
-      await refreshState();
-      el('sheetStatus').textContent = '선택 캐릭터의 수동 입력 능력치를 삭제했습니다.';
-    } catch (error) {
-      el('sheetStatus').textContent = '수동 입력 삭제 실패: ' + error.message;
-    } finally {
-      el('manualSheetClear').disabled = false;
-    }
-  });
-  el('importShowcase').addEventListener('click', async () => {
-    el('importShowcase').disabled = true;
-    try {
-      const imported = await desktop.importSavedShowcase();
-      if (imported) {
-        await refreshState();
-        el('sheetStatus').textContent = '공개 전시 JSON ' + imported.characters +
-          '명 연결 완료 (외부 통신 없이 로컬에서 처리)';
-      }
-    } catch (error) {
-      el('sheetStatus').textContent = '공개 전시 JSON 가져오기 실패: ' + error.message;
-    } finally {
-      el('importShowcase').disabled = false;
-    }
-  });
-  desktop.onSyncProgress(p => {
-    el('setupStatus').textContent = '게임 데이터 동기화 ' + p.done + '/' + p.total + ': ' + p.filename;
-  });
-  el('syncGame').addEventListener('click', async () => {
-    el('syncGame').disabled = true;
-    el('setupStatus').textContent = '게임 데이터 동기화 시작…';
-    try {
-      const result = await desktop.syncGame();
-      await refreshState();
-      el('message').textContent = '게임 데이터 ' + result.version + ' 동기화 완료';
-    } catch (error) {
-      el('message').textContent = '게임 데이터 동기화 실패: ' + error.message;
-    } finally {
-      el('syncGame').disabled = false;
-    }
-  });
-  el('importArchive').addEventListener('click', async () => {
-    el('importArchive').disabled = true;
-    try {
-      const result = await desktop.importArchive();
-      if (result) {
-        await refreshState();
-        el('message').textContent = result.source + ' 가져오기 완료: 캐릭터 ' +
-          result.characters + '명 · 광추 ' + result.lightCones + '개 · 유물 ' + result.relics + '개';
-      }
-    } catch (error) {
-      el('message').textContent = '계정 JSON 가져오기 실패: ' + error.message;
-    } finally {
-      el('importArchive').disabled = false;
-    }
-  });
-}
-
-el('generate').addEventListener('click', async () => {
-  const ids = [...selected];
-  if (!ids.length) { el('message').textContent = '캐릭터를 한 명 이상 선택하세요.'; return; }
-  el('generate').disabled = true;
-  el('message').textContent = '선택한 자료를 정리하고 있습니다…';
-  try {
-    const options = {
-      characterIds: ids, candidateMode: el('candidateMode').value,
-      minRarity: Number(el('minRarity').value),
-      ...(el('candidateLimit').value.trim() ? { candidateLimit: Number(el('candidateLimit').value) } : {}),
-      candidateFilters: selectedRelicFilters(),
-      includeResources: el('resources').checked, format: el('format').value,
-    };
-    if (options.candidateLimit !== undefined &&
-        (!Number.isInteger(options.candidateLimit) || options.candidateLimit < 1)) {
-      throw new Error('후보 최대 개수는 1 이상의 정수여야 합니다.');
-    }
-    if (desktop) {
-      output = await desktop.exportData(options);
-    } else {
-      const res = await fetch('/api/export', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(options),
-      });
-      output = await res.text();
-      if (!res.ok) throw Error(output);
-    }
-    outputFormat = options.format;
-    el('result').value = output;
-    el('copy').disabled = false;
-    el('save').disabled = false;
-    el('message').textContent = '완료: ' + ids.length + '명 · ' +
-      new Blob([output]).size.toLocaleString() + '바이트';
-  } catch (error) {
-    el('message').textContent = '생성 실패: ' + error.message;
-    el('copy').disabled = true;
-    el('save').disabled = true;
-  } finally {
-    el('generate').disabled = false;
-  }
-});
-
-for (const field of ['publicType','publicLimit','publicFormat','publicSearch']) {
-  el(field).addEventListener('input', () => {
-    publicOutput = '';
-    el('publicResult').value = '';
-    el('publicCopy').disabled = true;
-    el('publicSave').disabled = true;
-  });
-}
-el('publicGenerate').addEventListener('click', async () => {
-  const opts = {
-    type: el('publicType').value,
-    query: el('publicSearch').value,
-    limit: Number(el('publicLimit').value),
-    format: el('publicFormat').value,
-  };
-  if (!Number.isInteger(opts.limit) || opts.limit < 1 || opts.limit > 200) {
-    el('publicMessage').textContent = '최대 개수는 1~200이어야 합니다.';
-    return;
-  }
-  el('publicGenerate').disabled = true;
-  try {
-    let response;
-    if (desktop) response = await desktop.exportPublicData(opts);
-    else {
-      const http = await fetch('/api/public', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(opts),
-      });
-      if (!http.ok) throw new Error(await http.text());
-      response = await http.json();
-    }
-    publicOutput = response.text;
-    publicOutputFormat = opts.format;
-    el('publicResult').value = publicOutput;
-    el('publicCopy').disabled = false;
-    el('publicSave').disabled = false;
-    el('publicMessage').textContent = '조건 일치 ' + response.total +
-      '건 · 출력 ' + response.included + '건';
-  } catch (error) {
-    publicOutput = '';
-    el('publicCopy').disabled = true;
-    el('publicSave').disabled = true;
-    el('publicMessage').textContent = '공개 자료 검색 실패: ' + error.message;
-  } finally {
-    el('publicGenerate').disabled = false;
-  }
-});
-el('publicCopy').addEventListener('click', async () => {
-  try {
-    if (desktop) await desktop.copyText(publicOutput);
-    else await navigator.clipboard.writeText(publicOutput);
-    el('publicMessage').textContent = '공개 자료를 복사했습니다.';
-  } catch (error) {
-    el('publicMessage').textContent = '복사 실패: ' + error.message;
-  }
-});
-el('publicSave').addEventListener('click', async () => {
-  if (desktop) {
-    try {
-      const saved = await desktop.saveText({ text: publicOutput, format: publicOutputFormat });
-      if (saved) el('publicMessage').textContent = '공개 자료 저장 완료';
-    } catch (error) {
-      el('publicMessage').textContent = '저장 실패: ' + error.message;
-    }
-    return;
-  }
-  const extension = publicOutputFormat === 'json' ? 'json' : 'md';
-  const url = URL.createObjectURL(new Blob([publicOutput], { type: 'text/plain;charset=utf-8' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'hsr-public-data.' + extension;
-  link.click();
-  URL.revokeObjectURL(url);
-});
-
-el('copy').addEventListener('click', async () => {
-  try {
-    if (desktop) await desktop.copyText(output);
-    else await navigator.clipboard.writeText(output);
-    el('message').textContent = '클립보드에 복사했습니다.';
-  } catch (error) {
-    el('message').textContent = '복사 실패: ' + error.message;
-  }
-});
-el('save').addEventListener('click', async () => {
-  if (desktop) {
-    try {
-      const saved = await desktop.saveText({ text: output, format: outputFormat });
-      if (saved) el('message').textContent = '파일 저장 완료';
-    } catch (error) {
-      el('message').textContent = '저장 실패: ' + error.message;
-    }
-    return;
-  }
-  const url = URL.createObjectURL(new Blob([output], { type: 'text/plain;charset=utf-8' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'hsr-ai-export.' + (outputFormat === 'json' ? 'json' : 'md');
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
-/* The new explorer reads only the already-scanned account inventory.
-   All filtering and sorting here changes display/selection, not scanner data. */
-let inventoryCatalog = null;
-let inventoryRows = [];
-let inventoryFiltered = [];
-let inventorySelected = new Set();
-let inventoryPage = 0;
-const INVENTORY_PAGE_SIZE = 50;
-const invChoiceMap = [
-  ['invRarities', 'rarities', 'invRarityCount', 'rarity'],
-  ['invElements', 'elements', 'invElementCount', 'element'],
-  ['invPaths', 'paths', 'invPathCount', 'path'],
-  ['invSets', 'sets', 'invSetCount', 'setId'],
-  ['invSlots', 'slots', 'invSlotCount', 'slot'],
-  ['invMainstats', 'mainstats', 'invMainCount', 'mainstat'],
-  ['invSubstats', 'substats', 'invSubCount', 'substats'],
-];
-const invText = val => val == null ? '' : String(val);
-const invNumber = id => {
-  const value = el(id).value.trim();
-  if (!value) return null;
-  const num = Number(value);
-  return Number.isFinite(num) ? num : null;
+const getNumber=(root,name)=>{
+  const input=field(root,name);if(!input||input.value==='')return null;
+  const number=Number(input.value);return Number.isFinite(number)?number:null;
 };
-function invChecked(container) {
-  return [...el(container).querySelectorAll('input:checked')].map(node => node.value);
-}
-function invBuildChoices() {
-  const fields = new Map(invChoiceMap.map(([id]) => [id, new Map()]));
-  for (const row of inventoryRows) {
-    const add = (id, value, label) => {
-      if (value == null || value === '') return;
-      fields.get(id).set(String(value), label ?? String(value));
-    };
-    add('invRarities', row.rarity, row.rarity == null ? '' : row.rarity + '성');
-    add('invElements', row.element, row.elementName ?? row.element);
-    add('invPaths', row.path, row.pathName ?? row.path);
-    add('invSets', row.setId, row.setName ?? row.setId);
-    add('invSlots', row.slot, ({
-      Head: '머리', Hands: '손', Body: '몸통', Feet: '다리',
-      'Planar Sphere': '차원 구체', 'Link Rope': '연결 매듭',
-    })[row.slot] ?? row.slot);
-    add('invMainstats', row.mainstat, row.mainstat);
-    for (const stat of row.substats ?? []) add('invSubstats', stat.key, stat.name ?? stat.key);
-  }
-  for (const [id, _filterName, countId] of invChoiceMap) {
-    const container = el(id);
-    container.replaceChildren();
-    const options = [...fields.get(id).entries()].sort((a, b) =>
-      a[1].localeCompare(b[1], 'ko', { numeric: true }));
-    for (const [key, label] of options) {
-      const line = document.createElement('label');
-      const check = document.createElement('input');
-      check.type = 'checkbox'; check.value = key;
-      check.addEventListener('change', () => { inventoryPage = 0; invDraw(); });
-      line.append(check, document.createTextNode(label));
-      container.append(line);
-    }
-    el(countId).textContent = '';
-  }
-  const subSelect = el('invStatKey');
-  subSelect.replaceChildren(new Option('제한 없음', ''));
-  for (const [key, label] of [...fields.get('invSubstats').entries()].sort((a,b)=>
-    a[1].localeCompare(b[1], 'ko'))) subSelect.append(new Option(label, key));
-}
-function invReadFilter() {
+function readFilter(view,sortingOnly=false){
+  const root=view.fields;
+  const selected=name=>[...root.querySelectorAll('[data-multi="'+name+'"]:checked')].map(input=>input.value);
+  const val=name=>field(root,name)?.value??'';
   return {
-    group: el('inventoryGroup').value, query: el('inventorySearch').value.trim().toLocaleLowerCase('ko'),
-    rarities: invChecked('invRarities').map(Number),
-    elements: invChecked('invElements'),
-    paths: invChecked('invPaths'), sets: invChecked('invSets'),
-    slots: invChecked('invSlots'), mainstats: invChecked('invMainstats'),
-    substats: invChecked('invSubstats'),
-    minLevel: invNumber('invMinLevel'), maxLevel: invNumber('invMaxLevel'),
-    minEidolon: invNumber('invMinEidolon'), minSuper: invNumber('invMinSuper'),
-    minCount: invNumber('invMinCount'), equipped: el('invEquipped').value,
-    locked: el('invLocked').value, discard: el('invDiscard').value,
-    statKey: el('invStatKey').value, minStatValue: invNumber('invStatValue'),
-    minStatCount: invNumber('invStatCount'), sortBy: el('invSort').value,
-    descending: el('invDirection').value === 'desc',
+    group:view.group.id,
+    query:sortingOnly?'':val('query').trim().toLocaleLowerCase('ko'),
+    rarities:sortingOnly?[]:selected('rarities').map(Number),
+    elements:sortingOnly?[]:selected('elements'),
+    paths:sortingOnly?[]:selected('paths'),
+    sets:sortingOnly?[]:selected('sets'),
+    slots:sortingOnly?[]:selected('slots'),
+    mainstats:sortingOnly?[]:selected('mainstats'),
+    substats:sortingOnly?[]:selected('substats'),
+    minLevel:sortingOnly?null:getNumber(root,'minLevel'),
+    maxLevel:sortingOnly?null:getNumber(root,'maxLevel'),
+    minEidolon:sortingOnly?null:getNumber(root,'minEidolon'),
+    minSuperimposition:sortingOnly?null:getNumber(root,'minSuperimposition'),
+    minCount:sortingOnly?null:getNumber(root,'minCount'),
+    equipped:sortingOnly?'all':(val('equipped')||'all'),
+    locked:sortingOnly?'all':(val('locked')||'all'),
+    discard:sortingOnly?'all':(val('discard')||'all'),
+    statKey:sortingOnly?'':val('statKey'),
+    minStatValue:sortingOnly?null:getNumber(root,'minStatValue'),
+    minStatCount:sortingOnly?null:getNumber(root,'minStatCount'),
+    sortBy:field(view.root,'sortBy').value,
+    descending:field(view.root,'direction').value==='desc',
   };
 }
-function invFilter(rows, filter) {
-  const any = (values, actual) => !values.length || values.includes(actual);
-  const min = (v, m) => m == null || (v != null && v >= m);
-  const max = (v, m) => m == null || (v != null && v <= m);
-  const matched = rows.filter(x => {
-    if (filter.group !== 'all' && x.group !== filter.group) return false;
-    if (filter.query && ![x.name, x.id, x.setName, x.equippedName].some(v =>
-      invText(v).toLocaleLowerCase('ko').includes(filter.query))) return false;
-    if (!any(filter.rarities, x.rarity) || !any(filter.elements, x.element) ||
-        !any(filter.paths, x.path) || !any(filter.sets, x.setId) ||
-        !any(filter.slots, x.slot) || !any(filter.mainstats, x.mainstat)) return false;
-    if (!min(x.level, filter.minLevel) || !max(x.level, filter.maxLevel) ||
-        !min(x.eidolon, filter.minEidolon) || !min(x.superimposition, filter.minSuper) ||
-        !min(x.count, filter.minCount)) return false;
-    if (filter.equipped !== 'all' && x.equipped !== filter.equipped) return false;
-    if (filter.locked !== 'all' && String(x.locked) !== filter.locked) return false;
-    if (filter.discard !== 'all' && String(x.discard) !== filter.discard) return false;
-    const stats = x.substats ?? [];
-    if (filter.substats.length && !filter.substats.every(key =>
-      stats.some(st => st.key === key))) return false;
-    if (filter.statKey) {
-      const stat = stats.find(st => st.key === filter.statKey);
-      if (!stat || !min(stat.value, filter.minStatValue) ||
-          !min(stat.count, filter.minStatCount)) return false;
+function filterRows(rows,f){
+  const some=(list,x)=>!list.length||list.includes(x);
+  const atLeast=(x,n)=>n==null||(x!=null&&x>=n);
+  const atMost=(x,n)=>n==null||(x!=null&&x<=n);
+  const result=rows.filter(x=>{
+    if(f.query&&![x.name,x.id,x.setName,x.equippedName].some(v=>
+      String(v??'').toLocaleLowerCase('ko').includes(f.query)))return false;
+    if(!some(f.rarities,x.rarity)||!some(f.elements,x.element)||
+       !some(f.paths,x.path)||!some(f.sets,x.setId)||
+       !some(f.slots,x.slot)||!some(f.mainstats,x.mainstat))return false;
+    if(!atLeast(x.level,f.minLevel)||!atMost(x.level,f.maxLevel)||
+       !atLeast(x.eidolon,f.minEidolon)||
+       !atLeast(x.superimposition,f.minSuperimposition)||
+       !atLeast(x.count,f.minCount))return false;
+    if(f.equipped!=='all'&&x.equipped!==f.equipped)return false;
+    if(f.locked!=='all'&&String(x.locked)!==f.locked)return false;
+    if(f.discard!=='all'&&String(x.discard)!==f.discard)return false;
+    const stats=x.substats??[];
+    if(f.substats.length&&!f.substats.every(key=>stats.some(s=>s.key===key)))return false;
+    if(f.statKey){
+      const stat=stats.find(s=>s.key===f.statKey);
+      if(!stat||!atLeast(stat.value,f.minStatValue)||!atLeast(stat.count,f.minStatCount))return false;
     }
     return true;
   });
-  const textFields = new Set(['name', 'setName', 'mainstat', 'equipped']);
-  const numeric = new Set(['rarity', 'level', 'eidolon', 'superimposition', 'count']);
-  const field = filter.sortBy;
-  matched.sort((a,b) => {
-    const left = a[field], right = b[field];
-    if (left == null && right != null) return 1;
-    if (right == null && left != null) return -1;
-    if (left == null && right == null) return a.key.localeCompare(b.key);
-    const diff = numeric.has(field) ? left - right :
-      textFields.has(field) ? String(left).localeCompare(String(right), 'ko') : 0;
-    return diff * (filter.descending ? -1 : 1) || a.key.localeCompare(b.key);
+  const numeric=new Set(['rarity','level','eidolon','superimposition','count','mainstatValue']);
+  result.sort((a,b)=>{
+    const av=a[f.sortBy],bv=b[f.sortBy];
+    if(av==null&&bv!=null)return 1;
+    if(bv==null&&av!=null)return -1;
+    if(av==null&&bv==null)return a.key.localeCompare(b.key);
+    const cmp=numeric.has(f.sortBy)?av-bv:String(av).localeCompare(String(bv),'ko');
+    return cmp*(f.descending?-1:1)||a.key.localeCompare(b.key);
   });
-  return matched;
+  return result;
 }
-function invDraw() {
-  if (!inventoryCatalog) return;
-  for (const [id, _field, countId] of invChoiceMap) {
-    const count = invChecked(id).length;
-    el(countId).textContent = count ? '(' + count + ')' : '';
+function mainDetail(item){
+  const parts=[];
+  if(item.setName)parts.push(item.setName);
+  if(item.slot)parts.push(item.slot);
+  if(item.mainstatName)parts.push('주옵션 '+item.mainstatName+
+    (item.mainstatValue==null?'':' '+item.mainstatValue+(item.mainstatUnit==='%'?'%':'')));
+  if(item.substats?.length)parts.push(item.substats.map(s=>
+    (s.name??s.key)+' '+(s.displayValue??s.value)+(s.unit==='%'?'%':'')).join(', '));
+  if(item.equippedName)parts.push('장착: '+item.equippedName);
+  if(item.group==='lightCones'&&item.pathName)parts.push(item.pathName);
+  if(item.group==='characters')parts.push([item.pathName,item.elementName].filter(Boolean).join(' · '));
+  if(item.group==='materials')parts.push('보유 수량 '+(item.count??'?'));
+  return parts.filter(Boolean).join(' · ')||'-';
+}
+function renderView(view){
+  const f=readFilter(view);
+  view.filtered=filterRows(view.rows,f);
+  const pages=Math.max(1,Math.ceil(view.filtered.length/PAGE_SIZE));
+  view.page=Math.max(0,Math.min(view.page,pages-1));
+  view.count.textContent='검색 '+view.filtered.length+'개 / 전체 '+view.rows.length+
+    '개 · 선택 '+view.selected.size+'개';
+  view.pageLabel.textContent=(view.page+1)+' / '+pages;
+  view.prev.disabled=view.page<=0;view.next.disabled=view.page>=pages-1;
+  for(const summary of view.root.querySelectorAll('[data-count-of]')){
+    const number=view.root.querySelectorAll('[data-multi="'+summary.dataset.countOf+'"]:checked').length;
+    summary.textContent=number?number+'개 선택':'전체';
   }
-  inventoryFiltered = invFilter(inventoryRows, invReadFilter());
-  const totalPages = Math.max(1, Math.ceil(inventoryFiltered.length / INVENTORY_PAGE_SIZE));
-  inventoryPage = Math.max(0, Math.min(inventoryPage, totalPages - 1));
-  el('inventoryCount').textContent = '검색 결과 ' + inventoryFiltered.length +
-    '개 / 전체 ' + inventoryRows.length + '개 · 선택 ' + inventorySelected.size + '개';
-  el('inventorySummary').textContent = Object.entries(inventoryCatalog.counts).map(
-    ([key, n]) => (inventoryCatalog.groups[key] ?? key) + ' ' + n).join(' · ');
-  el('invPage').textContent = (inventoryPage + 1) + ' / ' + totalPages;
-  el('invPrev').disabled = inventoryPage <= 0;
-  el('invNext').disabled = inventoryPage + 1 >= totalPages;
-  const body = el('inventoryRows'); body.replaceChildren();
-  const page = inventoryFiltered.slice(
-    inventoryPage * INVENTORY_PAGE_SIZE,
-    (inventoryPage + 1) * INVENTORY_PAGE_SIZE);
-  for (const item of page) {
-    const tr = document.createElement('tr');
-    const box = document.createElement('input'); box.type = 'checkbox';
-    box.checked = inventorySelected.has(item.key);
-    box.setAttribute('aria-label', item.name + ' 선택');
-    box.addEventListener('change', () => {
-      if (box.checked) inventorySelected.add(item.key);
-      else inventorySelected.delete(item.key);
-      el('inventoryCount').textContent = '검색 결과 ' + inventoryFiltered.length +
-        '개 / 전체 ' + inventoryRows.length + '개 · 선택 ' + inventorySelected.size + '개';
+  const slice=view.filtered.slice(view.page*PAGE_SIZE,(view.page+1)*PAGE_SIZE);
+  view.tbody.replaceChildren();
+  for(const item of slice){
+    const row=make('tr');
+    const colCheck=make('td');
+    const checkbox=make('input');checkbox.type='checkbox';checkbox.checked=view.selected.has(item.key);
+    checkbox.setAttribute('aria-label',item.name+' 선택');
+    checkbox.addEventListener('change',()=>{
+      if(checkbox.checked)view.selected.add(item.key);else view.selected.delete(item.key);
+      view.count.textContent='검색 '+view.filtered.length+'개 / 전체 '+view.rows.length+
+        '개 · 선택 '+view.selected.size+'개';
+      renderExportSummary();
     });
-    const tick = document.createElement('td'); tick.append(box);
-    const name = document.createElement('td');
-    const strong = document.createElement('div'); strong.className = 'inventory-item-name';
-    strong.textContent = item.name;
-    const group = document.createElement('small');
-    group.textContent = (inventoryCatalog.groups[item.group] ?? item.group) + ' · ' + item.id;
-    name.append(strong, group);
-    const score = document.createElement('td');
-    score.textContent = [item.rarity == null ? null : item.rarity + '성',
-      item.level == null ? null : (item.group === 'relics' || item.group === 'ornaments'
-        ? '+' + item.level : 'Lv.' + item.level),
-      item.eidolon == null ? null : '성혼 ' + item.eidolon,
-      item.superimposition == null ? null : '중첩 ' + item.superimposition,
-      item.count == null ? null : '×' + item.count,
-    ].filter(Boolean).join(' · ') || '-';
-    const extra = document.createElement('td');
-    const details = document.createElement('details');
-    const summary = document.createElement('summary');
-    summary.textContent = [
-      item.setName, item.slot,
-      item.mainstatName ? '주옵션: ' + item.mainstatName +
-        (item.mainstatValue == null ? '' : ' ' + item.mainstatValue +
-          (item.mainstatUnit === '%' ? '%' : '')) : null,
-      item.equippedName ? '장착: ' + item.equippedName : null,
-      item.substats?.length ? item.substats.map(s => (s.name ?? s.key) + ' ' +
-        (s.displayValue ?? s.value) + (s.unit === '%' ? '%' : '')).join(', ') : null,
-    ].filter(Boolean).join(' · ') || '상세';
-    const pre = document.createElement('pre');
-    pre.textContent = JSON.stringify(item, null, 2);
-    details.append(summary, pre); extra.append(details);
-    tr.append(tick, name, score, extra); body.append(tr);
+    colCheck.append(checkbox);
+    const colName=make('td','title-cell');
+    colName.append(make('div','item-name',item.name??item.id),
+      make('small','item-meta',item.id));
+    const colLevel=make('td','');
+    colLevel.textContent=[
+      item.rarity==null?null:item.rarity+'성',
+      item.level==null?null:((item.group==='relics'||item.group==='ornaments')?'+':'Lv.')+item.level,
+      item.eidolon==null?null:'성혼 '+item.eidolon,
+      item.superimposition==null?null:'중첩 '+item.superimposition,
+      item.count==null?null:'×'+item.count,
+    ].filter(Boolean).join(' · ')||'-';
+    row.append(colCheck,colName,colLevel,make('td','item-detail',mainDetail(item)));
+    view.tbody.append(row);
   }
-  if (!page.length) {
-    const tr = document.createElement('tr'), td = document.createElement('td');
-    td.colSpan = 4; td.textContent = '조건에 맞는 항목이 없습니다.';
-    tr.append(td); body.append(tr);
+  if(!slice.length){
+    const row=make('tr'),cell=make('td','', '조건에 맞는 항목이 없습니다.');
+    cell.colSpan=4;row.append(cell);view.tbody.append(row);
   }
 }
-function invResetFilters(keepGroup = false) {
-  const group = el('inventoryGroup').value;
-  for (const [id] of invChoiceMap) {
-    for (const input of el(id).querySelectorAll('input')) input.checked = false;
+function renderGroupCheckboxes(){
+  const box=$('groupCheckboxes');box.replaceChildren();
+  for(const group of GROUPS){
+    const label=make('label','category-toggle');
+    const checkbox=make('input');checkbox.type='checkbox';checkbox.checked=enabled.has(group.id);
+    checkbox.dataset.group=group.id;
+    checkbox.addEventListener('change',()=>{
+      if(checkbox.checked)enabled.add(group.id);else enabled.delete(group.id);
+      if(!enabled.has(activeGroup))activeGroup=GROUPS.find(g=>enabled.has(g.id))?.id??null;
+      renderTabs();renderExportSummary();
+    });
+    label.append(checkbox,make('span','',group.label),
+      make('small','',(views.get(group.id)?.rows.length??0)+'개'));
+    box.append(label);
   }
-  for (const id of ['inventorySearch','invMinLevel','invMaxLevel','invMinEidolon',
-    'invMinSuper','invMinCount','invStatValue','invStatCount']) el(id).value = '';
-  for (const id of ['invEquipped','invLocked','invDiscard']) el(id).value = 'all';
-  el('invStatKey').value = ''; el('invSort').value = 'name';
-  el('invDirection').value = 'asc';
-  el('inventoryGroup').value = keepGroup ? group : 'all';
-  inventoryPage = 0; invDraw();
 }
-function invRequest() {
+function renderTabs(){
+  const nav=$('tabBar');nav.replaceChildren();
+  const available=GROUPS.filter(g=>enabled.has(g.id));
+  $('noActiveGroups').classList.toggle('hidden',available.length>0);
+  if(!available.some(g=>g.id===activeGroup))activeGroup=available[0]?.id??null;
+  for(const group of available){
+    const view=views.get(group.id);
+    const button=make('button','',group.label+' · '+(view?.rows.length??0));
+    button.type='button';button.setAttribute('role','tab');
+    button.setAttribute('aria-selected',String(activeGroup===group.id));
+    button.setAttribute('aria-controls','panel-'+group.id);
+    button.addEventListener('click',()=>{activeGroup=group.id;renderTabs();});
+    nav.append(button);
+  }
+  for(const group of GROUPS){
+    const view=views.get(group.id);
+    if(view)view.root.hidden=group.id!==activeGroup||!enabled.has(group.id);
+  }
+}
+function currentSelection(){
+  const keys=[],orderKeys=[];
+  for(const group of GROUPS){
+    if(!enabled.has(group.id))continue;
+    const view=views.get(group.id);if(!view)continue;
+    const rows=filterRows(view.rows,readFilter(view,true));
+    for(const row of rows)if(view.selected.has(row.key)){keys.push(row.key);orderKeys.push(row.key);}
+  }
+  return {keys,orderKeys};
+}
+function renderExportSummary(){
+  const selected=currentSelection();
+  const pills=$('exportCounts');pills.replaceChildren();
+  for(const group of GROUPS){
+    if(!enabled.has(group.id))continue;
+    const view=views.get(group.id);
+    const count=view?.selected.size??0;
+    pills.append(make('span','count-chip',group.label+' '+count+'개'));
+  }
+  const count=selected.keys.length;
+  $('saveExport').disabled=count===0;
+  $('previewExport').disabled=count===0;
+  $('exportStatus').textContent=count
+    ? '출력 대상으로 '+count+'개 선택 · 자료 종류별 검색 결과는 서로 합치지 않습니다.'
+    : '각 탭에서 출력할 항목을 선택하세요.';
+}
+function requestForExport(){
+  const selected=currentSelection();
   return {
-    keys: [...inventorySelected], format: el('inventoryOutputFormat').value,
-    sortBy: el('invSort').value, descending: el('invDirection').value === 'desc',
-    includeGacha: el('invIncludeGacha').checked,
-    includeWarp: el('invIncludeWarp').checked,
-    includeSupplemental: el('invIncludeSupplemental').checked,
-    includeReference: el('invIncludeReference').checked,
+    ...selected,
+    format:$('exportFormat').value,
+    includeGacha:$('includeGacha').checked,
+    includeWarp:$('includeWarp').checked,
+    includeSupplemental:$('includeSupplemental').checked,
+    includeReference:$('includeReference').checked,
   };
 }
-async function invGenerate(request) {
-  if (desktop) return desktop.exportSelectedInventory(request);
-  const response = await fetch('/api/inventory/export', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
+async function exportData(request){
+  if(desktop)return desktop.exportSelectedInventory(request);
+  const response=await fetch('/api/inventory/export',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(request),
   });
-  if (!response.ok) throw new Error(await response.text());
-  return { text: await response.text(),
-    extension: request.format === 'html' ? 'html' : request.format === 'markdown' ? 'md' : 'json' };
+  if(!response.ok)throw new Error(await response.text());
+  return {text:await response.text(),
+    extension:request.format==='html'?'html':request.format==='markdown'?'md':'json'};
 }
-async function loadInventoryExplorer() {
-  const status = el('inventoryExportStatus');
-  try {
-    const catalog = desktop ? await desktop.getInventoryCatalog() :
-      await (async () => {
-        const res = await fetch('/api/inventory/catalog');
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-      })();
-    inventoryCatalog = catalog;
-    inventoryRows = catalog.rows;
-    const availableKeys = new Set(inventoryRows.map(row => row.key));
-    inventorySelected = new Set([...inventorySelected].filter(key => availableKeys.has(key)));
-    invBuildChoices(); invDraw();
-    status.textContent = '스캔된 계정 자료만 표시합니다. 기존 저장된 원본은 변경하지 않습니다.';
-  } catch (error) {
-    inventoryCatalog = null; inventoryRows = [];
-    inventorySelected.clear();
-    el('inventoryRows').replaceChildren();
-    el('inventoryCount').textContent = '계정 자료를 가져온 후 탐색할 수 있습니다.';
-    el('inventorySummary').textContent = '게임 데이터 및 계정 JSON 필요';
-    status.textContent = '계정 자료 준비 전: ' + error.message;
-  }
-}
-for (const id of ['inventorySearch','invMinLevel','invMaxLevel','invMinEidolon',
-  'invMinSuper','invMinCount','invStatValue','invStatCount']) {
-  el(id).addEventListener('input', () => { inventoryPage = 0; invDraw(); });
-}
-for (const id of ['invEquipped','invLocked','invDiscard','invStatKey','invSort','invDirection']) {
-  el(id).addEventListener('change', () => { inventoryPage = 0; invDraw(); });
-}
-el('inventoryGroup').addEventListener('change', () => invResetFilters(true));
-el('invReset').addEventListener('click', () => invResetFilters(false));
-el('invPrev').addEventListener('click', () => { inventoryPage--; invDraw(); });
-el('invNext').addEventListener('click', () => { inventoryPage++; invDraw(); });
-el('inventorySelectFiltered').addEventListener('click', () => {
-  for (const row of inventoryFiltered) inventorySelected.add(row.key);
-  invDraw();
-});
-el('inventoryClearFiltered').addEventListener('click', () => {
-  for (const row of inventoryFiltered) inventorySelected.delete(row.key);
-  invDraw();
-});
-el('inventorySelectAll').addEventListener('click', () => {
-  for (const row of inventoryRows) inventorySelected.add(row.key);
-  invDraw();
-});
-el('inventoryClearAll').addEventListener('click', () => {
-  inventorySelected.clear(); invDraw();
-});
-el('inventoryPreview').addEventListener('click', async () => {
-  const request = invRequest();
-  if (!request.keys.length) {
-    el('inventoryExportStatus').textContent = '출력할 항목을 먼저 선택하세요.'; return;
-  }
-  el('inventoryPreview').disabled = true;
-  try {
-    const result = await invGenerate(request);
-    el('inventoryPreviewText').value = request.format === 'html'
-      ? 'HTML 문서는 파일 저장 후 브라우저에서 열어 확인하거나 인쇄할 수 있습니다.'
-      : result.text.slice(0, 20000) +
-        (result.text.length > 20000 ? '\n\n… 미리보기 20,000자 제한 (저장 시 전체 출력)' : '');
-    el('inventoryExportStatus').textContent = '미리보기 생성 완료 · ' +
-      request.keys.length + '개 선택. 저장 시 전체 데이터가 출력됩니다.';
-  } catch (error) {
-    el('inventoryExportStatus').textContent = '미리보기 생성 실패: ' + error.message;
-  } finally { el('inventoryPreview').disabled = false; }
-});
-el('inventoryExport').addEventListener('click', async () => {
-  const request = invRequest();
-  if (!request.keys.length) {
-    el('inventoryExportStatus').textContent = '출력할 항목을 먼저 선택하세요.'; return;
-  }
-  el('inventoryExport').disabled = true;
-  el('inventoryExportStatus').textContent = '선택한 자료 저장 중…';
-  try {
-    if (desktop) {
-      const result = await desktop.saveSelectedInventory(request);
-      el('inventoryExportStatus').textContent = result
-        ? request.keys.length + '개 항목 저장 완료: ' + result.path
-        : '파일 저장 취소';
-    } else {
-      const result = await invGenerate(request);
-      const blob = new Blob([result.text], {
-        type: request.format === 'html' ? 'text/html;charset=utf-8' : 'text/plain;charset=utf-8',
-      });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url; anchor.download = 'hsr-account-selected.' + result.extension;
-      anchor.click(); URL.revokeObjectURL(url);
-      el('inventoryExportStatus').textContent = request.keys.length + '개 항목 다운로드 요청 완료';
+async function downloadSelection(){
+  const request=requestForExport();if(!request.keys.length)return;
+  const button=$('saveExport');button.disabled=true;
+  try{
+    if(desktop){
+      const result=await desktop.saveSelectedInventory(request);
+      $('exportStatus').textContent=result
+        ? '저장 완료 · '+request.keys.length+'개 · '+result.path:'저장 취소';
+    }else{
+      const result=await exportData(request);
+      const blob=new Blob([result.text],{type:request.format==='html'?'text/html;charset=utf-8':'text/plain;charset=utf-8'});
+      const url=URL.createObjectURL(blob);
+      const anchor=make('a');anchor.href=url;anchor.download='hsr-account-selected.'+result.extension;
+      anchor.click();URL.revokeObjectURL(url);
+      $('exportStatus').textContent='선택한 '+request.keys.length+'개 파일 다운로드 요청 완료';
     }
-  } catch (error) {
-    el('inventoryExportStatus').textContent = '저장 실패: ' + error.message;
-  } finally { el('inventoryExport').disabled = false; }
+  }catch(error){$('exportStatus').textContent='저장 실패: '+error.message;}
+  finally{button.disabled=false;}
+}
+async function loadAccount(){
+  const status=$('accountStatus');
+  try{
+    accountState=desktop?await desktop.getState():await (async()=>{
+      const r=await fetch('/api/state');if(!r.ok)throw new Error(await r.text());return r.json();
+    })();
+    if(!accountState.ready&&desktop){
+      throw new Error('게임 자료 갱신과 계정 JSON 가져오기를 완료하세요.');
+    }
+    catalog=desktop?await desktop.getInventoryCatalog():await (async()=>{
+      const r=await fetch('/api/inventory/catalog');if(!r.ok)throw new Error(await r.text());return r.json();
+    })();
+    const previous=new Map([...views].map(([id,v])=>[id,new Set(v.selected)]));
+    views.clear();$('tabPanels').replaceChildren();
+    for(const group of GROUPS){
+      const rows=catalog.rows.filter(row=>row.group===group.id);
+      const view=createView(group,rows);
+      for(const row of rows)if(previous.get(group.id)?.has(row.key))view.selected.add(row.key);
+      views.set(group.id,view);$('tabPanels').append(view.root);renderView(view);
+    }
+    status.textContent='게임 '+catalog.metadata.gameVersion+' · '+GROUPS.map(g=>
+      g.label+' '+(catalog.counts[g.id]??0)).join(' · ');
+    $('analysisPreferences').value=accountState.analysisPreferences?.text??'';
+    renderGroupCheckboxes();renderTabs();renderExportSummary();
+  }catch(error){
+    status.textContent='계정 자료를 준비하세요: '+error.message;
+    catalog=null;views.clear();$('tabPanels').replaceChildren();
+    renderGroupCheckboxes();renderTabs();renderExportSummary();
+  }
+}
+$('enableAllGroups').addEventListener('click',()=>{
+  for(const group of GROUPS)enabled.add(group.id);
+  renderGroupCheckboxes();renderTabs();renderExportSummary();
 });
-inventoryLoaded = true;
-await loadInventoryExplorer();
-
-</script></body></html>
+$('disableAllGroups').addEventListener('click',()=>{
+  enabled.clear();renderGroupCheckboxes();renderTabs();renderExportSummary();
+});
+$('clearSelections').addEventListener('click',()=>{
+  for(const view of views.values()){view.selected.clear();renderView(view);}
+  renderExportSummary();
+});
+$('previewExport').addEventListener('click',async()=>{
+  const request=requestForExport();if(!request.keys.length)return;
+  const button=$('previewExport');button.disabled=true;
+  try{
+    const result=await exportData(request);
+    $('previewText').value=request.format==='html'
+      ? 'HTML은 파일 저장 후 브라우저에서 열거나 인쇄할 수 있습니다.'
+      : result.text.slice(0,20000)+(result.text.length>20000?'\n\n…미리보기 20,000자 제한 (저장 파일은 전체 내용)':'');
+    $('exportStatus').textContent='미리보기 생성 완료 · '+request.keys.length+'개 선택';
+  }catch(error){$('exportStatus').textContent='미리보기 실패: '+error.message;}
+  finally{button.disabled=false;}
+});
+$('saveExport').addEventListener('click',downloadSelection);
+$('savePreferences').addEventListener('click',async()=>{
+  if(!desktop)return;
+  const button=$('savePreferences');button.disabled=true;
+  try{
+    const result=await desktop.saveAnalysisPreferences($('analysisPreferences').value);
+    $('preferenceStatus').textContent='저장 완료 · '+result.updatedAt;
+  }catch(error){$('preferenceStatus').textContent='저장 실패: '+error.message;}
+  finally{button.disabled=false;}
+});
+if(desktop){
+  $('desktopToolbar').hidden=false;
+  desktop.onSyncProgress(progress=>{
+    $('accountStatus').textContent='게임 자료 갱신 '+progress.done+'/'+progress.total+' · '+progress.filename;
+  });
+  $('syncGame').addEventListener('click',async()=>{
+    const button=$('syncGame');button.disabled=true;
+    try{await desktop.syncGame();await loadAccount();}
+    catch(error){$('accountStatus').textContent='게임 자료 갱신 실패: '+error.message;}
+    finally{button.disabled=false;}
+  });
+  $('importArchive').addEventListener('click',async()=>{
+    const button=$('importArchive');button.disabled=true;
+    try{const result=await desktop.importArchive();if(result)await loadAccount();}
+    catch(error){$('accountStatus').textContent='계정 파일 가져오기 실패: '+error.message;}
+    finally{button.disabled=false;}
+  });
+}
+await loadAccount();
+</script>
+</body></html>
