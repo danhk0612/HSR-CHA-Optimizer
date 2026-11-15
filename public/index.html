@@ -507,6 +507,7 @@ function renderTabs(){
     const view=views.get(group.id);
     const button=make('button','',group.label+' · '+(view?.rows.length??0));
     button.type='button';button.setAttribute('role','tab');
+    button.dataset.group=group.id;
     button.setAttribute('aria-selected',String(activeGroup===group.id));
     button.setAttribute('aria-controls','panel-'+group.id);
     button.addEventListener('click',()=>{activeGroup=group.id;renderTabs();});
@@ -535,6 +536,10 @@ function renderExportSummary(){
     const view=views.get(group.id);
     const count=view?.selected.size??0;
     pills.append(make('span','count-chip',group.label+' '+count+'개'));
+  }
+  for(const tab of $('tabBar').querySelectorAll('[data-group]')){
+    const view=views.get(tab.dataset.group);
+    if(view)tab.textContent=view.group.label+' · '+view.rows.length+'개 / 선택 '+view.selected.size+'개';
   }
   const count=selected.keys.length;
   $('saveExport').disabled=count===0;
@@ -638,10 +643,18 @@ $('previewExport').addEventListener('click',async()=>{
 });
 $('saveExport').addEventListener('click',downloadSelection);
 $('savePreferences').addEventListener('click',async()=>{
-  if(!desktop)return;
   const button=$('savePreferences');button.disabled=true;
   try{
-    const result=await desktop.saveAnalysisPreferences($('analysisPreferences').value);
+    const result=desktop
+      ? await desktop.saveAnalysisPreferences($('analysisPreferences').value)
+      : await (async()=>{
+        const response=await fetch('/api/preferences',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({text:$('analysisPreferences').value}),
+        });
+        if(!response.ok)throw new Error(await response.text());
+        return response.json();
+      })();
     $('preferenceStatus').textContent='저장 완료 · '+result.updatedAt;
   }catch(error){$('preferenceStatus').textContent='저장 실패: '+error.message;}
   finally{button.disabled=false;}
