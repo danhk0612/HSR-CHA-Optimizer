@@ -15,6 +15,18 @@
 4. 현재 버전에는 **자동 외부 UID API 요청 기능을 추가하지 않음**. UID를 제삼자 서비스에 보내기 전에 사용자가 명시적으로 조회를 선택하도록 해야 함.
 5. 게임 중 전투 버프를 받았을 때의 능력치는 평상시 전시/상세창 수치와 다른 데이터임. 두 상태를 섞지 않음.
 
+## 0.1.4 구현: 오프라인 능력치 보완
+
+- **게임 캐릭터 화면 수동 입력:** Windows EXE 하단의 '캐릭터 최종 능력치 보완'에서 캐릭터별 HP/공격력/방어력/속도/치확/치피/격파 특수효과/효과 명중·저항/에너지 회복효율을 입력. 게임에 표시된 퍼센트 숫자 그대로 기록(예: 65.3%라면 65.3). 입력하지 않은 필드는 미확인 처리.
+- **Mihomo Parsed API v2 파일 수동 가져오기:** 사용자가 별도로 내려받은 `{player:{uid},characters:[{id,attributes,additions,properties}]}` 형식의 JSON을 프로그램에서 선택. 로컬 스캐너 UID와 JSON `player.uid`를 비교한 후, 실제 보유 캐릭터 ID만 연결. 다른 UID, 스키마 또는 미보유 ID는 가져오지 않음.
+- **직접적인 UID API 통신 없음.** 로컬 파일만 열고 사용자 계정 정보는 외부에 전송하지 않음.
+- **출처와 시점:** 수동 입력은 `manualObserved` 및 입력 시각 `recordedAt`, Mihomo 공개 전시는 `publicShowcaseCalculated` 및 파일 가져온 시각 `importedAt` 표시. 외부 API 원본 스냅샷의 실제 수집 시각은 확인할 수 없으므로 `originalCaptureTimeKnown:false`로 명시.
+- **계산 결과 혼동 방지:** Mihomo의 기초 능력치 `attributes`, 추가 능력치 `additions`, 상세 효과 `properties`를 원본별 분리 보존. 값들을 독단적으로 합산해 게임 화면에서 관측한 최종 스탯이라고 주장하지 않음.
+- **독립 저장:** `.local-data/account/character-stats.json`에 캐릭터별 수동/공개 전시 값을 따로 저장. `scanner.json`을 변경하지 않음. 파일의 원본 플레이어 UID와 닉네임도 새 저장소·AI 출력에 복사하지 않음.
+- **부분 보완:** 공개 전시에 없는 캐릭터도 수동 입력 가능. AI 출력 `limitations.characterSheetCoverage`는 선택한 캐릭터 중 보완된 인원수를 구분.
+
+공식 기술 문서: [MiHoMo Parsed Data API](https://march7th.xyz/en/api/parsed.html). 비공식 커뮤니티 서비스이며 게임 계정 전체의 능력치를 모두 조회하지는 못합니다.
+
 ## 남은 실사용 검증
 
 - 공개 전시 캐릭터의 능력치 응답 형식 및 개인정보 노출 범위 확인
