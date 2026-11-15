@@ -4,6 +4,7 @@ import { loadAccountData } from './account-files.mjs';
 import { buildAiReport, toAiMarkdown, resolveCharacterName } from './ai-report.mjs';
 import { buildCandidateFilterOptions } from './relic-filters.mjs';
 import { exportPublicData } from './public-data-files.mjs';
+import { readEnemyIndex, syncEnemyData } from './enemy-files.mjs';
 import { readLatestGameChangeReport } from './game-changes.mjs';
 import { compareCharacterSheet } from './stat-comparison.mjs';
 import { WARP_POOLS, readWarpState, saveManualWarpPool, clearManualWarpPool } from './warp-state.mjs';
@@ -22,6 +23,7 @@ export async function getDesktopState(root) {
     ready: false, gameReady, accountReady,
     version: null, importedAt: null,
     gameChanges: null,
+    enemyData: { prepared: false, total: 0, nameResolved: 0, nameUnresolved: 0, sourceGameVersion: null }, 
     characters: [], lightCones: 0, relics: 0, unequippedRelics: null,
     candidateFilterOptions: { sets: [], slots: [], mainstats: [], substats: [] },
     characterStatFields: MANUAL_STAT_FIELDS,
@@ -35,6 +37,11 @@ export async function getDesktopState(root) {
     empty.version = current.version ?? null;
   }
   if (gameReady) empty.gameChanges = await readLatestGameChangeReport(root);
+  const enemyIndex = gameReady ? await readEnemyIndex(root) : null;
+  if (enemyIndex) empty.enemyData = {
+    prepared: true, total: enemyIndex.total, nameResolved: enemyIndex.nameResolved,
+    nameUnresolved: enemyIndex.nameUnresolved, sourceGameVersion: enemyIndex.sourceGameVersion,
+  };
   if (!gameReady || !accountReady) return empty;
   const data = await loadAccountData(root);
   const sheet = await readCharacterStats(root, data.scanner);
@@ -99,6 +106,10 @@ export async function importSavedShowcase(root, inputPath) {
   const { scanner } = await loadAccountData(root);
   const parsed = JSON.parse(await readFile(inputPath, 'utf8'));
   return importMihomoParsed(root, scanner, parsed);
+}
+
+export async function prepareEnemyInfo(root, onProgress) {
+  return syncEnemyData(root, onProgress);
 }
 
 export async function exportPublicInfo(root, request) {
