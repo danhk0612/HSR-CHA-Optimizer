@@ -48,7 +48,10 @@
 - [x] 설치 의존성을 최소화한 Node.js 로컬 브라우저 GUI 시제품 결정
 - [x] Electron 45 + electron-builder 26 Portable x64 패키징 구성 확정
 - [x] EXE 첫 실행 시 로컬 동기화·JSON 파일 가져오기·네이티브 파일 저장 연결
-- [ ] Windows Portable EXE 실제 빌드 및 처음 실행부터 전체 플로우 검증
+- [x] Windows 0.1.0 Portable EXE 생성 성공 (사용자 제공 PowerShell 로그)
+- [x] 0.1.1 자체 SVG 아이콘 적용 및 빌드된 Electron IPC·첫 화면 자동 스모크 테스트 작성
+- [x] GUI 미장착 유물 후보 개수 제한·전체 후보 수 표시 및 출력 설정 변경 시 이전 결과 비활성화
+- [ ] 0.1.1 EXE의 Windows 구동 스모크·첫 실행부터 가져오기/저장 실사용 검증
 - [x] 로컬 브라우저 GUI에서 계정 캐릭터 검색·목록 표시 시제품
 - [x] 복수 캐릭터 선택 및 실제 장비·스킬·성혼 정보 결합 (AI용 간결 출력)
 - [x] AI용 Markdown/JSON 미리보기·복사·저장 시제품
