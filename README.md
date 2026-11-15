@@ -28,8 +28,11 @@ Node.js **20 이상**을 준비하고 저장소 루트에서 실행합니다. �
 npm run sync
 npm run export:character -- "아케론"
 npm run export:character -- "아케론" --json
+npm run export:character -- "아케론" --light-cone "<광추 이름>" --relic-set "<유물 세트 이름>" --json
 npm test
 ```
+
+광추는 `--light-cone "이름 또는 ID"`, 유물 세트는 `--relic-set "이름 또는 ID"`로 명시적으로 선택합니다. 옵션은 반복 지정할 수 있으며, 지정하지 않으면 기존 캐릭터 자료만 출력됩니다. 이 옵션은 **게임 원본 장비 데이터**를 붙이는 기능으로, 실제 계정에 장착된 장비를 자동 판별하지 않습니다.
 
 동기화 결과는 `.local-data/game/`에 저장되며 Git에 업로드되지 않습니다. `export:character`는 현재 공개 게임 자료만 출력하며 개인 장비 정보는 아직 포함하지 않습니다.
 
